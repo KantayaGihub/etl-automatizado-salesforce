@@ -2,8 +2,8 @@ name: ETL-Automatico-Salesforce
 
 on:
   schedule:
-    - cron: "0 10 * * 1"   # Lunes 10am Perú
-  workflow_dispatch:       # Permite ejecutarlo a mano
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
 
 jobs:
   etl:
@@ -23,6 +23,8 @@ jobs:
         pip install -r requirements.txt
 
     - name: Ejecutar paso 1 - Descargar Drive
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
       run: python etl/01_descargar_drive.py
 
     - name: Ejecutar paso 2 - Limpieza
