@@ -1,53 +1,41 @@
 import os
-import json
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
+import requests
 
-print("=== Iniciando descarga desde Google Drive ===")
+print("=== Descargando Google Sheets como Excel ===")
 
-# 1. Leer JSON del Secret
-service_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-if not service_json:
-    raise ValueError("❌ No se encontró GOOGLE_SERVICE_ACCOUNT_JSON.")
+FILE_ID = "1453uzHXNpFwh1zNk6-bbxeGNg8nbGbzMAwBXmoNHsbk"
+OUTPUT_PATH = "entrada/Ficha_Social.xlsx"
 
-# 2. Guardarlo como archivo temporal
-with open("service_account.json", "w") as f:
-    f.write(service_json)
+# URL de exportación correcta
+export_url = f"https://docs.google.com/spreadsheets/d/{FILE_ID}/export?format=xlsx"
 
-# 3. Autenticación con Google API client
-SCOPES = [
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/spreadsheets"
-]
+# Autenticación con service account
+from google.oauth2.service_account import Credentials
+from google.auth.transport.requests import AuthorizedSession
 
-creds = service_account.Credentials.from_service_account_file(
-    "service_account.json",
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+SERVICE_ACCOUNT_JSON = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
+
+creds = Credentials.from_service_account_info(
+    eval(SERVICE_ACCOUNT_JSON),
     scopes=SCOPES
 )
 
-drive_service = build("drive", "v3", credentials=creds)
+authed = AuthorizedSession(creds)
 
-print("✔ Autenticación correcta")
+print("✓ Autenticación correcta")
 
-# 4. ID del archivo Google Sheets
-FILE_ID = "1jx7eXk_lPHiNGrmLwkWmd8-4wEVTkPeZ"
+# Descargar archivo
+response = authed.get(export_url)
 
-# 5. Crear carpeta /data
-os.makedirs("data", exist_ok=True)
-output_path = "data/Ficha_Social_respuestas.xlsx"
+if response.status_code != 200:
+    print("Error en descarga:", response.text)
+    raise SystemExit(1)
 
-print("⬇ Exportando Google Sheets a Excel (.xlsx)...")
+os.makedirs("entrada", exist_ok=True)
 
-# 6. Descargar archivo convertido
-request = drive_service.files().export_media(
-    fileId=FILE_ID,
-    mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+with open(OUTPUT_PATH, "wb") as f:
+    f.write(response.content)
 
-# Guardar archivo
-with open(output_path, "wb") as fh:
-    downloader = request.execute()
-    fh.write(downloader)
-
-print(f"🎉 Descarga completada: {output_path}")
+print(f"✓ Archivo descargado correctamente → {OUTPUT_PATH}")
 
