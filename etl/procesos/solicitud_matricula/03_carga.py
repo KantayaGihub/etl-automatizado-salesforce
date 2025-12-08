@@ -159,7 +159,7 @@ for col in ["Fecha_de_nacimiento__c", "Marca_temporal__c"]:
 
 df["EDAD__c"] = pd.to_numeric(df["EDAD__c"], errors = "coerce")
 
-df = df.where(pd.notnull(F_Sol_Matricula), None)
+df = df.where(pd.notnull(df), None)
 
 
 # Conexión Bulk API
