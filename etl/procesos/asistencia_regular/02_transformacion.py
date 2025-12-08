@@ -59,6 +59,8 @@ import pandas as pd
 import re
 import unicodedata
 import numpy as np
+from pathlib import Path
+
 
 # === CONFIGURACIÓN DE RUTAS (ACTUALIZADO) ====================================
 NOMBRE_CARPETA = "01 REGULAR - ASISTENCIAS 2025"
