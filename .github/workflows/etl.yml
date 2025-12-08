@@ -32,4 +32,7 @@ jobs:
 
     - name: Ejecutar paso 3 - Subir a Salesforce
       run: python etl/03_subir_salesforce.py
+    - name: Listar archivos generados
+      run: ls -R .
+
 
