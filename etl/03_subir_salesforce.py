@@ -6,6 +6,8 @@ from io import BytesIO
 import os
 from utils2.mapeo import mapeo
 from simple_salesforce import Salesforce
+from salesforce_bulk.util import IteratorBytesIO
+
 
 
 print("=== Eliminación de resultados previos Salesforce ===")
