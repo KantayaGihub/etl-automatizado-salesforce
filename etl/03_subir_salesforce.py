@@ -8,13 +8,6 @@ from utils2.mapeo import mapeo
 
 print("=== Eliminación de resultados previos Salesforce ===")
 
-# Conexión
-sf = Salesforce(
-    username='salesforce@kantayaperu.com.t4t',
-    password='4uto.KP25',
-    security_token='5BYv5tsEL1Iu8hL2bEXIFed5',
-    domain='test'
-)
 
 bulk = SalesforceBulk(
     username='salesforce@kantayaperu.com.t4t',
