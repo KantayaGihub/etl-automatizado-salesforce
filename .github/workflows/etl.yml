@@ -22,16 +22,16 @@ jobs:
       run: |
         pip install -r requirements.txt
 
-    - name: Ejecutar paso 1 - Descargar Drive
+    - name: Ejecutar Ficha Social - Descargar
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/01_descargar_drive.py
+      run: python etl/procesos/ficha_social/01_descargar.py
 
-    - name: Ejecutar paso 2 - Limpieza
-      run: python etl/02_limpieza.py
+    - name: Ejecutar Ficha Social - Transformacion
+      run: python etl/procesos/ficha_social/02_transformacion.py
 
-    - name: Ejecutar paso 3 - Subir a Salesforce
-      run: python etl/03_subir_salesforce.py
+    - name: Ejecutar Ficha Social - Subir a salesforce 
+      run: python etl/procesos/ficha_social/03_carga.py
     
     - name: Subir artefactos de salida
       uses: actions/upload-artifact@v4
