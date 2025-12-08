@@ -39,5 +39,11 @@ jobs:
         name: salida-etl
         path: salida/
 
+    - name: Ejecutar Asistencia Regular - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python etl/procesos/asistencia_regular/descargar.py
 
+    - name: Listar archivos generados
+      run: ls -R .
 
