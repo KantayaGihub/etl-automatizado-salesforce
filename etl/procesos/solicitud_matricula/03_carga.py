@@ -173,6 +173,16 @@ bulk = SalesforceBulk(
 # 🔹 Limpiar valores NaN antes de convertir
 df = df.replace({float('nan'): None, pd.NA: None, np.nan: None})
 
+# ==========================================================
+# 📝 GUARDAR EL DATAFRAME FINAL (df) COMO ARTEFACTO
+# ==========================================================
+debug_path = "debug/df_final_a_subir.csv"
+os.makedirs("debug", exist_ok=True)
+
+# Guardamos el df final antes del insert
+df.to_csv(debug_path, index=False, encoding="utf-8-sig")
+print(f"📁 [DEBUG] DataFrame final guardado en: {debug_path}")
+
 # Convertir DataFrame a lista de diccionarios
 records = df.to_dict('records')
 
