@@ -1,3 +1,13 @@
+import pandas as pd
+import numpy as np
+from salesforce_bulk import SalesforceBulk
+import json
+from io import BytesIO
+import os
+from utils2.mapeo import mapeo
+
+
+
 print("=== Iniciando carga a Salesforce ===")
 
 print("🔎 Cargando archivo limpio...")
