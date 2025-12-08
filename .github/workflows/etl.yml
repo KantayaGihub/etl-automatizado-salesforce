@@ -42,10 +42,13 @@ jobs:
     - name: Ejecutar Asistencia Regular - Descargar
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/asistencia_regular/descargar.py
+      run: python etl/procesos/asistencia_regular/01_descargar.py
+
+    - name: Ejecutar Asistencia Regular - Transformación
+      run: python etl/procesos/asistencia_regular/02_transformacion.py
 
     - name: Listar archivos generados
-      run: ls -R .
+      run: ls -R salida
 
     - name: Subir artefactos de salida
       uses: actions/upload-artifact@v4
