@@ -66,6 +66,20 @@ jobs:
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
       run: python etl/procesos/encuesta_satisfaccion_padres/02_transformacion.py
+    
+    - name: Ejecutar Calificaciones área y competencias - Descarga
+      env:
+        AZ_TENANT_ID: ${{ secrets.AZ_TENANT_ID }}
+        AZ_CLIENT_ID: ${{ secrets.AZ_CLIENT_ID }}
+        AZ_CLIENT_SECRET: ${{ secrets.AZ_CLIENT_SECRET }}
+      run: python etl/procesos/calificaciones_area_competencia/01_descarga.py
+    
+    - name: Subir artefacto del Excel descargado
+      uses: actions/upload-artifact@v4
+      with:
+        name: PE25_Ventanilla_Resultados
+        path: entrada/PE25_Ventanilla_Resultados.xlsx
+
 
     - name: Subir artefacto Encuesta Padres Deduplicado
       uses: actions/upload-artifact@v4
