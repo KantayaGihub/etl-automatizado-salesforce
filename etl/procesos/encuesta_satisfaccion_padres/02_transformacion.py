@@ -282,11 +282,18 @@ if __name__ == "__main__":
     input_folder_encuesta = "entrada/csv"
     os.makedirs(input_folder_encuesta, exist_ok=True)
 
-    print("\n=== Convirtiendo archivos Excel (.xlsx) a CSV ===")
+    print("\n=== Convirtiendo SOLO archivos de ENCUESTA Excel (.xlsx) a CSV ===")
 
-    # Convertir cada Excel descargado a CSV
+    # Lista exacta de archivos válidos
+    VALID_FILES = {
+        "Encuesta_Inicial_1y2.xlsx",
+        "Encuesta_3y4.xlsx",
+        "Encuesta_5y6.xlsx"
+    }
+
+    # Convertir **solo** los Excel de encuesta a CSV
     for fname in os.listdir(input_folder_excel):
-        if fname.endswith(".xlsx"):
+        if fname in VALID_FILES:
             excel_path = os.path.join(input_folder_excel, fname)
             csv_name = fname.replace(".xlsx", ".csv")
             csv_path = os.path.join(input_folder_encuesta, csv_name)
@@ -296,7 +303,7 @@ if __name__ == "__main__":
             df_temp = pd.read_excel(excel_path)
             df_temp.to_csv(csv_path, index=False, encoding="utf-8-sig")
 
-    print("✓ Conversión completa. Usando ahora los CSV para la limpieza.\n")
+    print("✓ Conversión completa. Usando los CSV filtrados para la limpieza.\n")
 
     # 3. Rutas de salida
     output_folder = "salidas"
@@ -314,5 +321,3 @@ if __name__ == "__main__":
         output_path_csv,
         output_path_excel
     )
-
-
