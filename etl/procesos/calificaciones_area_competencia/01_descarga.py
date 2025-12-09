@@ -1,98 +1,59 @@
 import os
 import requests
 
-# ==============================
-# 🔐 Credenciales desde GitHub
-# ==============================
+print("=== Descargando archivo desde SharePoint ===")
+
 TENANT_ID = os.environ["AZ_TENANT_ID"]
 CLIENT_ID = os.environ["AZ_CLIENT_ID"]
 CLIENT_SECRET = os.environ["AZ_CLIENT_SECRET"]
 
-# ==============================
-# 🔧 CONFIG (AJUSTA ESTO)
-# ==============================
-SITE_DOMAIN = "analyticsadvancedconsulting.sharepoint.com"
-SITE_PATH = "sites/Prueba"
+# NOMBRE EXACTO DEL ARCHIVO EN SHAREPOINT
 FILE_NAME = "PE25_Ventanilla y proyectos_Resultados Power BI VF.xlsx"
 
-# Carpeta "Documentos" en español → normalmente es "Shared Documents"
-SHAREPOINT_FOLDER = "Shared Documents"
-
+# SALIDA LOCAL
 OUTPUT_PATH = "entrada/PE25_Ventanilla_Resultados.xlsx"
 os.makedirs("entrada", exist_ok=True)
 
-# ==============================
-# 1️⃣ Obtener token
-# ==============================
-print("=== Obteniendo token ===")
+# ============================================================
+# 1) Obtener token
+# ============================================================
+token_url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
 
-token_resp = requests.post(
-    f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token",
-    data={
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "grant_type": "client_credentials",
-        "scope": "https://graph.microsoft.com/.default"
-    }
-)
+data = {
+    "client_id": CLIENT_ID,
+    "client_secret": CLIENT_SECRET,
+    "scope": "https://graph.microsoft.com/.default",
+    "grant_type": "client_credentials"
+}
 
-token = token_resp.json()["access_token"]
+resp = requests.post(token_url, data=data)
+resp.raise_for_status()
+token = resp.json()["access_token"]
+
 headers = {"Authorization": f"Bearer {token}"}
 
-# ==============================
-# 2️⃣ Obtener SITE_ID
-# ==============================
-print("\n=== Obteniendo SITE_ID ===")
+# ============================================================
+# 2) SITE_ID y DRIVE_ID ya detectados
+# ============================================================
+SITE_ID = "analyticsadvancedconsulting.sharepoint.com,66aec61b-24b6-4190-ad48-bcf8d47c7825,15c34463-4775-42b4-9b39-cf5266896971"
+DRIVE_ID = "b!G8auZrYkkEGtSLz41Hx4JWNEwxV1R7RCmznPUmaJaXF3zp1RuYlNSI5iAham6BG7"
 
-site_url = f"https://graph.microsoft.com/v1.0/sites/{SITE_DOMAIN}:/{SITE_PATH}?$select=id"
-site_info = requests.get(site_url, headers=headers).json()
-
-SITE_ID = site_info["id"]
-print("SITE_ID:", SITE_ID)
-
-# ==============================
-# 3️⃣ Obtener DRIVE_ID
-# ==============================
-print("\n=== Obteniendo DRIVE_ID ===")
-
-drives_url = f"https://graph.microsoft.com/v1.0/sites/{SITE_ID}/drives"
-drives_info = requests.get(drives_url, headers=headers).json()
-
-print("\n=== Lista de DRIVES encontrados ===")
-for d in drives_info["value"]:
-    print(f"- name: {d['name']} | id: {d['id']}")
-
-DRIVE_ID = None
-# Intentar elegir automáticamente el primero que NO sea system drive
-for d in drives_info["value"]:
-    if d["name"] not in ["Form Templates"]:
-        DRIVE_ID = d["id"]
-        break
-
-print("\nDRIVE_ID detectado automáticamente:", DRIVE_ID)
-
-
-# ==============================
-# 4️⃣ Descargar archivo
-# ==============================
-print("\n=== Descargando archivo ===")
-
-file_relative_path = f"{SHAREPOINT_FOLDER}/{FILE_NAME}"
-
+# ============================================================
+# 3) URL correcta de descarga App-Only
+# ============================================================
 download_url = (
     f"https://graph.microsoft.com/v1.0/sites/{SITE_ID}"
-    f"/drives/{DRIVE_ID}/root:/{file_relative_path}:/content"
+    f"/drives/{DRIVE_ID}/root:/{FILE_NAME}:/content"
 )
 
+print("Descargando:", FILE_NAME)
 resp = requests.get(download_url, headers=headers)
 
 if resp.status_code != 200:
-    print("❌ Error al descargar:", resp.text)
+    print("❌ Error al descargar archivo:", resp.text)
     raise SystemExit(1)
 
 with open(OUTPUT_PATH, "wb") as f:
     f.write(resp.content)
 
-print(f"✓ Archivo descargado correctamente en {OUTPUT_PATH}")
-
-
+print(f"✓ Archivo descargado correctamente → {OUTPUT_PATH}")
