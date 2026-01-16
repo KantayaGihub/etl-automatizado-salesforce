@@ -22,20 +22,6 @@ jobs:
       run: |
         pip install -r requirements.txt
     
-    - name: Ejecutar Calificaciones área y competencias - Descarga
-      env:
-        AZ_TENANT_ID: ${{ secrets.AZ_TENANT_ID }}
-        AZ_CLIENT_ID: ${{ secrets.AZ_CLIENT_ID }}
-        AZ_CLIENT_SECRET: ${{ secrets.AZ_CLIENT_SECRET }}
-      run: python etl/procesos/calificaciones_area_competencia/01_descarga.py
-
-    - name: Ejecutar Calificaciones área y competencias - Transformacion
-      env:
-        AZ_TENANT_ID: ${{ secrets.AZ_TENANT_ID }}
-        AZ_CLIENT_ID: ${{ secrets.AZ_CLIENT_ID }}
-        AZ_CLIENT_SECRET: ${{ secrets.AZ_CLIENT_SECRET }}
-      run: python etl/procesos/calificaciones_area_competencia/02_transformacion.py
-
 
     - name: Ejecutar Asistencia Regular - Descargar
       env:
@@ -57,69 +43,5 @@ jobs:
     - name: Ejecutar paso 3 - Subir a Salesforce de asistencia regular
       run: python etl/procesos/asistencia_regular/03_carga.py
 
-    - name: Ejecutar Matricula - Descarga
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/matricula/01_descarga.py
-
-    - name: Ejecutar Matricula -Transformacion
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/matricula/02_transformacion.py
-
-    - name: Ejecutar Matricula -Carga
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/matricula/03_carga.py
     
-    - name: Subir artefacto del Excel descargado
-      uses: actions/upload-artifact@v4
-      with:
-        name: PE25_Ventanilla_Resultados
-        path: entrada/PE25_Ventanilla_Resultados.xlsx
-
-    - name: Subir Consolidado Áreas
-      uses: actions/upload-artifact@v4
-      with:
-        name: BD_Promedios_Areas_Consolidado
-        path: salida/promedios_areas/BD_Promedios_Areas_Consolidado.csv
-
-    - name: Subir Codebook Áreas
-      uses: actions/upload-artifact@v4
-      with:
-        name: BD_Promedios_Areas_Calidad
-        path: salida/promedios_areas/BD_Promedios_Areas_CALIDAD.xlsx
-
-    - name: Subir artefacto Encuesta Padres Deduplicado
-      uses: actions/upload-artifact@v4
-      with:
-        name: Encuesta_Padres_Deduplicado
-        path: salidas/Encuesta_Padres_Deduplicado.csv
-
-    - name: Subir archivo Matricula final como artefacto
-      uses: actions/upload-artifact@v4
-      with:
-        name: Matricula_Final_Procesada
-        path: salida/matricula/matricula_final_para_salesforce.csv
-
-    - name: Subir archivo final como artefacto
-      uses: actions/upload-artifact@v4
-      with:
-        name: asistencia_extracurricular
-        path: salida/asistencias_extracurriculares/asistencias_extra_consolidado_kantaya.csv
-
-    - name: Subir artefacto del DF final
-      uses: actions/upload-artifact@v4
-      with:
-        name: df-final-salesforce
-        path: debug/df_final_a_subir.csv
-
-      
-    - name: Subir artefactos de salida
-      uses: actions/upload-artifact@v4
-      with:
-        name: salida-etl-solicitud-matricula
-        path: |
-          salida/
-
 
