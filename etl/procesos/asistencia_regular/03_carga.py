@@ -18,14 +18,14 @@ print("=== Eliminación de resultados previos Salesforce ===")
 sf = Salesforce(
     username='salesforce@kantayaperu.com.t4t',
     password='4uto.KP26',
-    security_token='5BYv5tsEL1Iu8hL2bEXIFed5',
+    security_token='Urfjx1FzGoVLNSK0MlEKY16C',
     domain='test'
 )
 
 bulk = SalesforceBulk(
     username='salesforce@kantayaperu.com.t4t',
     password='4uto.KP26',
-    security_token='5BYv5tsEL1Iu8hL2bEXIFed5',
+    security_token='Urfjx1FzGoVLNSK0MlEKY16C',
     sandbox=True
 )
 
@@ -120,7 +120,7 @@ print("✔ Archivo preparado correctamente para Salesforce Bulk API")
 bulk = SalesforceBulk(
     username='salesforce@kantayaperu.com.t4t',
     password='4uto.KP26',
-    security_token='5BYv5tsEL1Iu8hL2bEXIFed5',
+    security_token='Urfjx1FzGoVLNSK0MlEKY16C',
     sandbox=True
 )
 
