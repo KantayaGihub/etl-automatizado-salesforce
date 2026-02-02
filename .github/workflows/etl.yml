@@ -45,9 +45,22 @@ jobs:
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
       run: python etl/procesos/matricula/03_carga.py
+      
+    - name: Ejecutar Matricula - Descarga
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python etl/procesos/matricula/01_descarga.py
 
-    
-    
+    - name: Ejecutar Matricula -Transformacion
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python etl/procesos/matricula/02_transformacion.py
+
+    - name: Ejecutar Matricula -Carga
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python etl/procesos/matricula/03_carga.py
+
     - name: Listar archivos generados
       run: ls -R salida
 
@@ -60,7 +73,6 @@ jobs:
     - name: Ejecutar paso 3 - Subir a Salesforce de asistencia regular
       run: python etl/procesos/asistencia_regular/03_carga.py
 
-      
     - name: Subir artefactos de salida - matrícula
       uses: actions/upload-artifact@v4
       with:
