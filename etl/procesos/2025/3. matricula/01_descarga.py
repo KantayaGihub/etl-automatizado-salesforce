@@ -5,13 +5,9 @@ from google.auth.transport.requests import AuthorizedSession
 print("=== Descargando Google Sheets como Excel ===")
 
 # === CONFIGURACIÓN ===
-# ID del archivo Google Sheets
 FILE_ID = "1vB4iVs6BIjrtiAWtDc2MrSnifi3D2dw0eovyZ9uqDzY"
-
-# Ruta donde se guardará el archivo
 OUTPUT_PATH = "data/raw/2025/matricula/Consolidado_Matricula_AfterSchool.xlsx"
 
-# URL de exportación correcta
 export_url = f"https://docs.google.com/spreadsheets/d/{FILE_ID}/export?format=xlsx"
 
 # === AUTENTICACIÓN ===
@@ -34,7 +30,7 @@ if response.status_code != 200:
     print("❌ Error al descargar el archivo:", response.text)
     raise SystemExit(1)
 
-os.makedirs("entrada", exist_ok=True)
+os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 
 with open(OUTPUT_PATH, "wb") as f:
     f.write(response.content)
