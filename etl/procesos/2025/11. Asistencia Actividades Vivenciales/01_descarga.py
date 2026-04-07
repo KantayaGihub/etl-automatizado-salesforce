@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import requests
 from dotenv import load_dotenv
 
@@ -19,12 +18,12 @@ FILE_NAME = os.getenv(
     "01 CRONOGRAMA DE VOLUNTARIADO 2025.xlsx"
 )
 
-RAW_DIR = Path("data/raw/2025/voluntariado")
-RAW_FILE_PATH = RAW_DIR / "cronograma_voluntariado_2025.xlsx"
+RAW_DIR = Path("data/raw/2025/asistencia_actividades_vivenciales")
+RAW_FILE_PATH = RAW_DIR / "cronograma_actividades_vivenciales_2025.xlsx"
 
 
-def get_access_token() -> str:
-    token_url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
+def get_access_token():
+    url = f"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"
     data = {
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
@@ -32,12 +31,12 @@ def get_access_token() -> str:
         "grant_type": "client_credentials",
     }
 
-    response = requests.post(token_url, data=data, timeout=30)
+    response = requests.post(url, data=data, timeout=30)
     response.raise_for_status()
     return response.json()["access_token"]
 
 
-def get_site_id(access_token: str) -> str:
+def get_site_id(access_token):
     url = f"https://graph.microsoft.com/v1.0/sites/{HOSTNAME}:{SITE_PATH}"
     headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -46,7 +45,7 @@ def get_site_id(access_token: str) -> str:
     return response.json()["id"]
 
 
-def get_item_id_by_filename(access_token: str, site_id: str, file_name: str) -> str:
+def get_item_id_by_filename(access_token, site_id, file_name):
     headers = {"Authorization": f"Bearer {access_token}"}
     url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/root/search(q='{file_name}')"
 
@@ -63,7 +62,7 @@ def get_item_id_by_filename(access_token: str, site_id: str, file_name: str) -> 
     return selected["id"]
 
 
-def download_file(file_name: str, output_path: Path) -> Path:
+def download_file(file_name, output_path):
     access_token = get_access_token()
     site_id = get_site_id(access_token)
     item_id = get_item_id_by_filename(access_token, site_id, file_name)
@@ -71,12 +70,7 @@ def download_file(file_name: str, output_path: Path) -> Path:
     headers = {"Authorization": f"Bearer {access_token}"}
     download_url = f"https://graph.microsoft.com/v1.0/sites/{site_id}/drive/items/{item_id}/content"
 
-    response = requests.get(
-        download_url,
-        headers=headers,
-        timeout=120,
-        allow_redirects=True,
-    )
+    response = requests.get(download_url, headers=headers, timeout=120)
     response.raise_for_status()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -85,9 +79,11 @@ def download_file(file_name: str, output_path: Path) -> Path:
     return output_path
 
 
-def main() -> None:
-    print("=== DESCARGA VOLUNTARIADO ===")
+def main():
+    print("=== DESCARGA ASISTENCIA ACTIVIDADES VIVENCIALES ===")
+
     path = download_file(FILE_NAME, RAW_FILE_PATH)
+
     print("✅ Archivo descargado")
     print(path.resolve())
 
