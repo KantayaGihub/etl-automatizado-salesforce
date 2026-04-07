@@ -103,15 +103,29 @@ jobs:
   # 🔹 PROGRESO CURRICULAR
   # ============================================================
 
-    - name: Progreso Curricular - Descargar
+    #- name: Progreso Curricular - Descargar
+    #  env:
+    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
+    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
+    #    SHAREPOINT_FILE_NAME: Currícula - After School 2025.xlsx
+    #  run: python "etl/procesos/2025/8. progreso_curricular/01_descarga.py"
+
+    #- name: Progreso Curricular - Transformación
+    #  run: python "etl/procesos/2025/8. progreso_curricular/02_transformacion.py"
+
+  # ============================================================
+  # 🔹 ASISTENCIA ACTIVIDADES VIVENCIALES
+  # ============================================================
+
+    - name: Actividades Vivenciales - Descargar
       env:
         SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
         SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-        SHAREPOINT_FILE_NAME: Currícula - After School 2025.xlsx
-      run: python "etl/procesos/2025/8. progreso_curricular/01_descarga.py"
+        SHAREPOINT_FILE_NAME: 01 CRONOGRAMA DE VOLUNTARIADO 2025.xlsx
+      run: python "etl/procesos/2025/asistencia_actividades_vivenciales/01_descarga.py"
 
-    - name: Progreso Curricular - Transformación
-      run: python "etl/procesos/2025/8. progreso_curricular/02_transformacion.py"
+    - name: Actividades Vivenciales - Transformación
+      run: python "etl/procesos/2025/asistencia_actividades_vivenciales/02_transformacion.py"
 
     
     # ============================================================
@@ -165,14 +179,26 @@ jobs:
     #    name: horario-regular-processed
     #    path: data/processed/2025/horario_regular/*
 
-    - name: Subir artefacto raw - Progreso Curricular
-      uses: actions/upload-artifact@v4
-      with:
-        name: progreso-curricular-raw
-        path: data/raw/2025/progreso_curricular/*
+    #- name: Subir artefacto raw - Progreso Curricular
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: progreso-curricular-raw
+    #    path: data/raw/2025/progreso_curricular/*
 
-    - name: Subir artefacto processed - Progreso Curricular
+    #- name: Subir artefacto processed - Progreso Curricular
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: progreso-curricular-processed
+    #    path: data/processed/2025/progreso_curricular/*
+
+    - name: Subir artefacto raw - Actividades Vivenciales
       uses: actions/upload-artifact@v4
       with:
-        name: progreso-curricular-processed
-        path: data/processed/2025/progreso_curricular/*
+        name: actividades-vivenciales-raw
+        path: data/raw/2025/asistencia_actividades_vivenciales/*
+
+    - name: Subir artefacto processed - Actividades Vivenciales
+      uses: actions/upload-artifact@v4
+      with:
+        name: actividades-vivenciales-processed
+        path: data/processed/2025/asistencia_actividades_vivenciales/*
