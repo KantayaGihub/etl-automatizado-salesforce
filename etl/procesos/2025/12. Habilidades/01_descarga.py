@@ -11,6 +11,7 @@ CLIENT_SECRET = "W~j8Q~rylnObnr-6g8l7YCBXlwfkABQowMLB.a-7"
 CLIENT_ID = "338d0875-39c7-44fe-8f78-db08df73b6f0"
 TENANT_ID = "0324f870-1d9c-40a6-9a4c-e1e1a1464f9d"
 
+
 HOSTNAME = os.getenv("SHAREPOINT_HOSTNAME", "kantaya.sharepoint.com")
 SITE_PATH = os.getenv("SHAREPOINT_SITE_PATH", "/sites/EducativoKantaya")
 
