@@ -75,15 +75,15 @@ jobs:
  # 🔹 CALIFICACIONES ÁREA COMPETENCIA
  # ============================================================
 
-    - name: Calificaciones Área Competencia - Descargar
-      env:
-        SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
-        SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-        SHAREPOINT_FILE_NAME: Comparativa_Ventanilla y proyectos_Power BI Provisional.xlsx
-      run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
+    #- name: Calificaciones Área Competencia - Descargar
+    #  env:
+    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
+    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
+    #    SHAREPOINT_FILE_NAME: Comparativa_Ventanilla y proyectos_Power BI Provisional.xlsx
+    #  run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
 
-    - name: Calificaciones Área Competencia - Transformación
-      run: python "etl/procesos/2025/4. calificaciones_area_competencia/02_transformacion.py"
+    #- name: Calificaciones Área Competencia - Transformación
+    #  run: python "etl/procesos/2025/4. calificaciones_area_competencia/02_transformacion.py"
 
 
     
@@ -114,15 +114,15 @@ jobs:
     #    name: matricula-consolidada
     #    path: salida/matricula/*
 
-    - name: Subir artefacto raw - Calificaciones Área Competencia
-      uses: actions/upload-artifact@v4
-      with:
-        name: calificaciones-area-competencia-raw
-        path: data/raw/2025/4.calificaciones_area_competencia/*
+    #- name: Subir artefacto raw - Calificaciones Área Competencia
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: calificaciones-area-competencia-raw
+    #    path: data/raw/2025/4.calificaciones_area_competencia/*
 
-    - name: Subir artefacto processed - Calificaciones Área Competencia
-      uses: actions/upload-artifact@v4
-      with:
-        name: calificaciones-area-competencia-processed
-        path: data/processed/2025/4.calificaciones_area_competencia/*
+    #- name: Subir artefacto processed - Calificaciones Área Competencia
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: calificaciones-area-competencia-processed
+    #    path: data/processed/2025/4.calificaciones_area_competencia/*
 
