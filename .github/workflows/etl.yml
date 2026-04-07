@@ -26,50 +26,50 @@ jobs:
   # 🔹 ASISTENCIA REGULAR
   # ============================================================
 
-    - name: Ejecutar Asistencia Regular - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/asistencia_regular/01_descargar.py
+    #- name: Ejecutar Asistencia Regular - Descargar
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python etl/procesos/asistencia_regular/01_descargar.py
 
-    - name: Ejecutar Asistencia Regular - Transformación
-      run: python etl/procesos/asistencia_regular/02_transformacion.py
+    #- name: Ejecutar Asistencia Regular - Transformación
+    #  run: python etl/procesos/asistencia_regular/02_transformacion.py
 
-    - name: Ejecutar paso 3 - Subir a Salesforce de asistencia regular
-      run: python etl/procesos/asistencia_regular/03_carga.py
+    #- name: Ejecutar paso 3 - Subir a Salesforce de asistencia regular
+    #  run: python etl/procesos/asistencia_regular/03_carga.py
 
   # ============================================================
   # 🔹 ASISTENCIA EXTRACURRICULAR
   # ============================================================
 
-    - name: Asistencia Extracurricular - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/asistencia_extracurricular/01_descarga.py
+    #- name: Asistencia Extracurricular - Descargar
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python etl/procesos/asistencia_extracurricular/01_descarga.py
 
-    - name: Asistencia Extracurricular - Transformación
-      run: python etl/procesos/asistencia_extracurricular/02_transformacion.py
+    #- name: Asistencia Extracurricular - Transformación
+    #  run: python etl/procesos/asistencia_extracurricular/02_transformacion.py
 
-    - name: Asistencia Extracurricular - Carga
-      run: python etl/procesos/asistencia_extracurricular/03_carga.py
+    #- name: Asistencia Extracurricular - Carga
+    #  run: python etl/procesos/asistencia_extracurricular/03_carga.py
 
   # ============================================================
   # 🔹 MATRÍCULA
   # ============================================================
 
-    - name: Ejecutar Matricula - Descarga
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/matricula/01_descarga.py
+    #- name: Ejecutar Matricula - Descarga
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python etl/procesos/matricula/01_descarga.py
 
-    - name: Ejecutar Matricula -Transformacion
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/matricula/02_transformacion.py
+    #- name: Ejecutar Matricula -Transformacion
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python etl/procesos/matricula/02_transformacion.py
 
-    - name: Ejecutar Matricula -Carga
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python etl/procesos/matricula/03_carga.py
+    #- name: Ejecutar Matricula -Carga
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python etl/procesos/matricula/03_carga.py
     
     # ============================================================
     # 🔹 Artefactos
@@ -78,20 +78,20 @@ jobs:
     - name: Listar archivos generados
       run: ls -R salida
 
-    - name: Subir artefactos de salida - Extracurricular
-      uses: actions/upload-artifact@v4
-      with:
-        name: asistencias-extracurriculares-consolidada
-        path: salida/asistencias_extracurriculares/*
+    #- name: Subir artefactos de salida - Extracurricular
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: asistencias-extracurriculares-consolidada
+    #    path: salida/asistencias_extracurriculares/*
 
-    - name: Subir artefactos de salida - Asistencia regular
-      uses: actions/upload-artifact@v4
-      with:
-        name: asistencias-regular-consolidada
-        path: salida/asistencias/*
+    #- name: Subir artefactos de salida - Asistencia regular
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: asistencias-regular-consolidada
+    #    path: salida/asistencias/*
 
-    - name: Subir artefactos de salida - Matrícula
-      uses: actions/upload-artifact@v4
-      with:
-        name: matricula-consolidada
-        path: salida/matricula/*
+    #- name: Subir artefactos de salida - Matrícula
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: matricula-consolidada
+    #    path: salida/matricula/*
