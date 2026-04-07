@@ -45,39 +45,43 @@ jobs:
   # 🔹 ASISTENCIA EXTRACURRICULAR
   # ============================================================
     
-    - name: Ejecutar Extracurriculares 2025 - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python "etl/procesos/2025/2. asistencia_extracurricular/01_descarga.py"
+    #- name: Ejecutar Extracurriculares 2025 - Descargar
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python "etl/procesos/2025/2. asistencia_extracurricular/01_descarga.py"
     
-    - name: Ejecutar Extracurriculares 2025 - Transformación
-      run: python "etl/procesos/2025/2. asistencia_extracurricular/02_transformacion.py"
+    #- name: Ejecutar Extracurriculares 2025 - Transformación
+    #  run: python "etl/procesos/2025/2. asistencia_extracurricular/02_transformacion.py"
     
-    - name: Ejecutar Consolidación - Extracurriculares
-      run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
+    #- name: Ejecutar Consolidación - Extracurriculares
+    #  run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
     
-    - name: Ejecutar carga a Salesforce - Extracurriculares
-      run: python "etl/procesos/carga/02_asistencia_extracurricular.py"
+    #- name: Ejecutar carga a Salesforce - Extracurriculares
+    #  run: python "etl/procesos/carga/02_asistencia_extracurricular.py"
 
 
   # ============================================================
   # 🔹 MATRÍCULA
   # ============================================================
 
-    #- name: Ejecutar Matricula - Descarga
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python etl/procesos/matricula/01_descarga.py
-
-    #- name: Ejecutar Matricula -Transformacion
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python etl/procesos/matricula/02_transformacion.py
-
-    #- name: Ejecutar Matricula -Carga
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python etl/procesos/matricula/03_carga.py
+    - name: Ejecutar Matrícula 2025 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/3. matricula/01_descarga.py"
+    
+    - name: Ejecutar Matrícula 2025 - Transformación
+      run: python "etl/procesos/2025/3. matricula/02_transformacion.py"
+    
+    - name: Debug archivos matrícula (TEMPORAL)
+      run: |
+        echo "=== ARCHIVOS DATA ==="
+        find data -type f | sort
+    
+    - name: Ejecutar Consolidación - Matrícula
+      run: python "etl/procesos/consolidacion/3_matricula.py"
+    
+    - name: Ejecutar carga a Salesforce - Matrícula
+      run: python "etl/procesos/carga/03_matricula.py"
 
  # ============================================================
  # 🔹 CALIFICACIONES ÁREA COMPETENCIA
@@ -153,86 +157,9 @@ jobs:
     # 🔹 Artefactos
     # ============================================================
          
-    - name: Listar archivos generados
-      run: |
-        ls -R data/raw || true
-        ls -R data/processed || true
-
-    #- name: Subir artefactos de salida - Asistencia regular
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: asistencias-regular-consolidada
-    #    path: data/consolidated/asistencia_regular/*
-
-    - name: Subir artefactos - Extracurriculares
+    - name: Subir todos los artefactos
       uses: actions/upload-artifact@v4
       with:
-        name: asistencias-extracurriculares-consolidado
-        path: data/consolidated/asistencias_extracurriculares/*
-
-    #- name: Subir artefactos de salida - Matrícula
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: matricula-consolidada
-    #    path: salida/matricula/*
-
-    #- name: Subir artefacto raw - Calificaciones Área Competencia
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: calificaciones-area-competencia-raw
-    #    path: data/raw/2025/4.calificaciones_area_competencia/*
-
-    #- name: Subir artefacto processed - Calificaciones Área Competencia
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: calificaciones-area-competencia-processed
-    #    path: data/processed/2025/4.calificaciones_area_competencia/*
-
-    #- name: Subir artefacto raw - Horario Regular
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: horario-regular-raw
-    #    path: data/raw/2025/horario_regular/*
-
-    #- name: Subir artefacto processed - Horario Regular
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: horario-regular-processed
-    #    path: data/processed/2025/horario_regular/*
-
-    #- name: Subir artefacto raw - Progreso Curricular
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: progreso-curricular-raw
-    #    path: data/raw/2025/progreso_curricular/*
-
-    #- name: Subir artefacto processed - Progreso Curricular
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: progreso-curricular-processed
-    #    path: data/processed/2025/progreso_curricular/*
-
-    #- name: Subir artefacto raw - Actividades Vivenciales
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: actividades-vivenciales-raw
-    #    path: data/raw/2025/asistencia_actividades_vivenciales/*
-
-    #- name: Subir artefacto processed - Actividades Vivenciales
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: actividades-vivenciales-processed
-    #   path: data/processed/2025/asistencia_actividades_vivenciales/*
-
-    #- name: Subir artefacto raw - Impacto Habilidades
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: impacto-habilidades-raw
-    #    path: data/raw/2025/impacto_habilidades/*
-
-    #- name: Subir artefacto processed - Impacto Habilidades
-    #  uses: actions/upload-artifact@v4
-    #  with:
-    #    name: impacto-habilidades-processed
-    #    path: data/processed/2025/impacto_habilidades/*
+        name: data-artifacts
+        path: data/
 
