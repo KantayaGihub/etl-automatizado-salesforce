@@ -26,16 +26,20 @@ jobs:
   # 🔹 ASISTENCIA REGULAR
   # ============================================================
 
-    #- name: Ejecutar Asistencia Regular - Descargar
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python etl/procesos/asistencia_regular/01_descargar.py
+    - name: Ejecutar Asistencia Regular 2025 - Descargar
+      env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/1. asistencia_regular/01_descargar.py"
 
-    #- name: Ejecutar Asistencia Regular - Transformación
-    #  run: python etl/procesos/asistencia_regular/02_transformacion.py
+    - name: Ejecutar Asistencia Regular 2025 - Transformación
+      run: python "etl/procesos/2025/1. asistencia_regular/02_transformacion.py"
+      
+    - name: Ejecutar Consolidación - Asistencia Regular
+      run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
+    
+    - name: Ejecutar paso final - Subir a Salesforce de asistencia regular
+      run: python "etl/procesos/carga/1_asistencia_regular.py"
 
-    #- name: Ejecutar paso 3 - Subir a Salesforce de asistencia regular
-    #  run: python etl/procesos/asistencia_regular/03_carga.py
 
   # ============================================================
   # 🔹 ASISTENCIA EXTRACURRICULAR
@@ -131,15 +135,15 @@ jobs:
  # 🔹 IMPACTO HABILIDADES
  # ============================================================
 
-    - name: Impacto Habilidades - Descargar
-      env:
-        SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
-        SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-        SHAREPOINT_FILE_NAME: PE25_Ventanilla y proyectos_Habilidades.xlsx
-      run: python "etl/procesos/2025/12. Habilidades/01_descarga.py"
+    #- name: Impacto Habilidades - Descargar
+    #  env:
+    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
+    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
+    #    SHAREPOINT_FILE_NAME: PE25_Ventanilla y proyectos_Habilidades.xlsx
+    #  run: python "etl/procesos/2025/12. Habilidades/01_descarga.py"
 
-    - name: Impacto Habilidades - Transformación
-      run: python "etl/procesos/2025/12. Habilidades/02_transformacion.py"
+    #- name: Impacto Habilidades - Transformación
+    #  run: python "etl/procesos/2025/12. Habilidades/02_transformacion.py"
     
     # ============================================================
     # 🔹 Artefactos
@@ -149,6 +153,12 @@ jobs:
       run: |
         ls -R data/raw || true
         ls -R data/processed || true
+
+    - name: Subir artefactos de salida - Asistencia regular
+      uses: actions/upload-artifact@v4
+      with:
+        name: asistencias-regular-consolidada
+        path: data/consolidated/asistencia_regular/*
 
     #- name: Subir artefactos de salida - Extracurricular
     #  uses: actions/upload-artifact@v4
@@ -216,11 +226,11 @@ jobs:
     #    name: actividades-vivenciales-processed
     #   path: data/processed/2025/asistencia_actividades_vivenciales/*
 
-    - name: Subir artefacto raw - Impacto Habilidades
-      uses: actions/upload-artifact@v4
-      with:
-        name: impacto-habilidades-raw
-        path: data/raw/2025/impacto_habilidades/*
+    #- name: Subir artefacto raw - Impacto Habilidades
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: impacto-habilidades-raw
+    #    path: data/raw/2025/impacto_habilidades/*
 
     - name: Subir artefacto processed - Impacto Habilidades
       uses: actions/upload-artifact@v4
