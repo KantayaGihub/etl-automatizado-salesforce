@@ -89,15 +89,30 @@ jobs:
   # 🔹 HORARIO REGULAR
   # ============================================================
 
-    - name: Horario Regular - Descargar
+    #- name: Horario Regular - Descargar
+    #  env:
+    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
+    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
+    #    SHAREPOINT_FILE_NAME: 02 HORARIOS_AFTER SCHOOL 2025.xlsx
+    #  run: python "etl/procesos/2025/10. Horario regular/01_descarga.py"
+
+    #- name: Horario Regular - Transformación
+    #  run: python "etl/procesos/2025/10. Horario regular/02_transformacion.py"
+
+  # ============================================================
+  # 🔹 PROGRESO CURRICULAR
+  # ============================================================
+
+    - name: Progreso Curricular - Descargar
       env:
         SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
         SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-        SHAREPOINT_FILE_NAME: 02 HORARIOS_AFTER SCHOOL 2025.xlsx
-      run: python "etl/procesos/2025/10. Horario regular/01_descarga.py"
+        SHAREPOINT_FILE_NAME: Currícula - After School 2025.xlsx
+      run: python "etl/procesos/2025/8. progreso_curricular/01_descarga.py"
 
-    - name: Horario Regular - Transformación
-      run: python "etl/procesos/2025/10. Horario regular/02_transformacion.py"
+    - name: Progreso Curricular - Transformación
+      run: python "etl/procesos/2025/8. progreso_curricular/02_transformacion.py"
+
     
     # ============================================================
     # 🔹 Artefactos
@@ -138,15 +153,26 @@ jobs:
     #    name: calificaciones-area-competencia-processed
     #    path: data/processed/2025/4.calificaciones_area_competencia/*
 
-    - name: Subir artefacto raw - Horario Regular
+    #- name: Subir artefacto raw - Horario Regular
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: horario-regular-raw
+    #    path: data/raw/2025/horario_regular/*
+
+    #- name: Subir artefacto processed - Horario Regular
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: horario-regular-processed
+    #    path: data/processed/2025/horario_regular/*
+
+    - name: Subir artefacto raw - Progreso Curricular
       uses: actions/upload-artifact@v4
       with:
-        name: horario-regular-raw
-        path: data/raw/2025/horario_regular/*
+        name: progreso-curricular-raw
+        path: data/raw/2025/progreso_curricular/*
 
-    - name: Subir artefacto processed - Horario Regular
+    - name: Subir artefacto processed - Progreso Curricular
       uses: actions/upload-artifact@v4
       with:
-        name: horario-regular-processed
-        path: data/processed/2025/horario_regular/*
-
+        name: progreso-curricular-processed
+        path: data/processed/2025/progreso_curricular/*
