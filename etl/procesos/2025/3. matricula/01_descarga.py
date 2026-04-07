@@ -9,7 +9,7 @@ print("=== Descargando Google Sheets como Excel ===")
 FILE_ID = "1vB4iVs6BIjrtiAWtDc2MrSnifi3D2dw0eovyZ9uqDzY"
 
 # Ruta donde se guardará el archivo
-OUTPUT_PATH = "entrada/Consolidado_Matricula_AfterSchool.xlsx"
+OUTPUT_PATH = "data/raw/2025/matricula/Consolidado_Matricula_AfterSchool.xlsx"
 
 # URL de exportación correcta
 export_url = f"https://docs.google.com/spreadsheets/d/{FILE_ID}/export?format=xlsx"
