@@ -38,7 +38,7 @@ jobs:
       run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
     
     - name: Ejecutar paso final - Subir a Salesforce de asistencia regular
-      run: python "etl/procesos/carga/1_asistencia_regular.py"
+      run: python "etl/procesos/carga/01_asistencia_regular.py"
 
 
   # ============================================================
