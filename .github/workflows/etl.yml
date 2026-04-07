@@ -136,11 +136,10 @@ jobs:
         SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
         SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
         SHAREPOINT_FILE_NAME: PE25_Ventanilla y proyectos_Habilidades.xlsx
-      run: python "etl/procesos/2025/impacto_habilidades/01_descarga.py"
+      run: python "etl/procesos/2025/12. Habilidades/01_descarga.py"
 
     - name: Impacto Habilidades - Transformación
-      run: python "etl/procesos/2025/impacto_habilidades/02_transformacion.py"
-
+      run: python "etl/procesos/2025/12. Habilidades/02_transformacion.py"
     
     # ============================================================
     # 🔹 Artefactos
