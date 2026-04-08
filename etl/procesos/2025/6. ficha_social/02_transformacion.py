@@ -105,6 +105,6 @@ def limpiar_y_generar_ficha_social_v2(file_path, output_folder):
 # ============================================================
 if __name__ == "__main__":
     limpiar_y_generar_ficha_social_v2(
-        file_path="entrada/Ficha_Social.xlsx",
-        output_folder="salida"
+        file_path="data/raw/2025/6.ficha_social/Ficha_Social.xlsx",
+        output_folder="data/processed/2025/6.ficha_social"
     )
