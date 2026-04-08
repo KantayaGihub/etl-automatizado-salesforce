@@ -19,7 +19,7 @@ FILE_NAME = os.getenv(
     "Currícula - After School 2025.xlsx"
 )
 
-RAW_DIR = Path("data/raw/2025/progreso_curricular")
+RAW_DIR = Path("data/raw/2025/7.progreso_curricular")
 RAW_FILE_PATH = RAW_DIR / "curricula_after_school_2025.xlsx"
 
 
