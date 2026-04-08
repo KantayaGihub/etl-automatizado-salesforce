@@ -26,129 +26,129 @@ jobs:
   # 🔹 ASISTENCIA REGULAR
   # ============================================================
 
-    #- name: Ejecutar Asistencia Regular 2025 - Descargar
-    #  env:
-    #      GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python "etl/procesos/2025/1. asistencia_regular/01_descargar.py"
+    - name: Ejecutar Asistencia Regular 2025 - Descargar
+      env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/1. asistencia_regular/01_descargar.py"
 
-    #- name: Ejecutar Asistencia Regular 2025 - Transformación
-    #  run: python "etl/procesos/2025/1. asistencia_regular/02_transformacion.py"
+    - name: Ejecutar Asistencia Regular 2025 - Transformación
+      run: python "etl/procesos/2025/1. asistencia_regular/02_transformacion.py"
       
-    #- name: Ejecutar Consolidación - Asistencia Regular
-    #  run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
+    - name: Ejecutar Consolidación - Asistencia Regular
+      run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
     
-    #- name: Ejecutar paso final - Subir a Salesforce de asistencia regular
-    #  run: python "etl/procesos/carga/01_asistencia_regular.py"
+    - name: Ejecutar paso final - Subir a Salesforce de asistencia regular
+      run: python "etl/procesos/carga/01_asistencia_regular.py"
 
 
   # ============================================================
   # 🔹 ASISTENCIA EXTRACURRICULAR
   # ============================================================
     
-    #- name: Ejecutar Extracurriculares 2025 - Descargar
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python "etl/procesos/2025/2. asistencia_extracurricular/01_descarga.py"
+    - name: Ejecutar Extracurriculares 2025 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/2. asistencia_extracurricular/01_descarga.py"
     
-    #- name: Ejecutar Extracurriculares 2025 - Transformación
-    #  run: python "etl/procesos/2025/2. asistencia_extracurricular/02_transformacion.py"
+    - name: Ejecutar Extracurriculares 2025 - Transformación
+      run: python "etl/procesos/2025/2. asistencia_extracurricular/02_transformacion.py"
     
-    #- name: Ejecutar Consolidación - Extracurriculares
-    #  run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
+    - name: Ejecutar Consolidación - Extracurriculares
+      run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
     
-    #- name: Ejecutar carga a Salesforce - Extracurriculares
-    #  run: python "etl/procesos/carga/02_asistencia_extracurricular.py"
+    - name: Ejecutar carga a Salesforce - Extracurriculares
+      run: python "etl/procesos/carga/02_asistencia_extracurricular.py"
 
 
   # ============================================================
   # 🔹 MATRÍCULA
   # ============================================================
 
-    #- name: Ejecutar Matrícula 2025 - Descargar
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python "etl/procesos/2025/3. matricula/01_descarga.py"
+    - name: Ejecutar Matrícula 2025 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/3. matricula/01_descarga.py"
     
-    #- name: Ejecutar Matrícula 2025 - Transformación
-    #  run: python "etl/procesos/2025/3. matricula/02_transformacion.py"
+    - name: Ejecutar Matrícula 2025 - Transformación
+      run: python "etl/procesos/2025/3. matricula/02_transformacion.py"
     
-    #- name: Debug archivos matrícula (TEMPORAL)
-    #  run: |
-    #    echo "=== ARCHIVOS DATA ==="
-    #    find data -type f | sort
+    - name: Debug archivos matrícula (TEMPORAL)
+      run: |
+        echo "=== ARCHIVOS DATA ==="
+        find data -type f | sort
     
-    #- name: Ejecutar Consolidación - Matrícula
-    #  run: python "etl/procesos/consolidacion/3_matricula.py"
+    - name: Ejecutar Consolidación - Matrícula
+      run: python "etl/procesos/consolidacion/3_matricula.py"
     
-    #- name: Ejecutar carga a Salesforce - Matrícula
-    #  run: python "etl/procesos/carga/03_matricula.py"
+    - name: Ejecutar carga a Salesforce - Matrícula
+      run: python "etl/procesos/carga/03_matricula.py"
 
  # ============================================================
  # 🔹 CALIFICACIONES ÁREA COMPETENCIA
  # ============================================================
 
-    #- name: Ejecutar Calificaciones 2025 - Descargar
-    #  run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
+    - name: Ejecutar Calificaciones 2025 - Descargar
+      run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
     
-    #- name: Ejecutar Calificaciones 2025 - Transformación
-    #  run: python "etl/procesos/2025/4. calificaciones_area_competencia/02_transformacion.py"
+    - name: Ejecutar Calificaciones 2025 - Transformación
+      run: python "etl/procesos/2025/4. calificaciones_area_competencia/02_transformacion.py"
     
-    #- name: Debug archivos calificaciones (TEMPORAL)
-    #  run: |
-    #    echo "=== ARCHIVOS DATA ==="
-    #    find data -type f | sort
+    - name: Debug archivos calificaciones (TEMPORAL)
+      run: |
+        echo "=== ARCHIVOS DATA ==="
+        find data -type f | sort
     
-    #- name: Ejecutar Consolidación - Calificaciones
-    #  run: python "etl/procesos/consolidacion/4_calificaciones_area_competencia.py"
+    - name: Ejecutar Consolidación - Calificaciones
+      run: python "etl/procesos/consolidacion/4_calificaciones_area_competencia.py"
     
-    #- name: Ejecutar carga a Salesforce - Calificaciones
-    #  run: python "etl/procesos/carga/04_calificaciones_area_competencias.py"
+    - name: Ejecutar carga a Salesforce - Calificaciones
+      run: python "etl/procesos/carga/04_calificaciones_area_competencias.py"
 
 # ============================================================
 # 🔹 ENCUESTA SATISFACCIÓN PADRES
 # ============================================================
     
-    #- name: Ejecutar Encuesta Satisfacción Padres 2025 - Descargar
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/01_descarga.py"
+    - name: Ejecutar Encuesta Satisfacción Padres 2025 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/01_descarga.py"
     
-    #- name: Ejecutar Encuesta Satisfacción Padres 2025 - Transformación
-    #  run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/02_transformacion.py"
+    - name: Ejecutar Encuesta Satisfacción Padres 2025 - Transformación
+      run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/02_transformacion.py"
     
-    #- name: Debug archivos encuesta satisfacción padres (TEMPORAL)
-    #  run: |
-    #    echo "=== ARCHIVOS DATA ==="
-    #    find data -type f | sort
+    - name: Debug archivos encuesta satisfacción padres (TEMPORAL)
+      run: |
+        echo "=== ARCHIVOS DATA ==="
+        find data -type f | sort
     
-    #- name: Ejecutar Consolidación - Encuesta Satisfacción Padres
-    #  run: python "etl/procesos/consolidacion/5_encuesta_satisfaccion_padres.py"
+    - name: Ejecutar Consolidación - Encuesta Satisfacción Padres
+      run: python "etl/procesos/consolidacion/5_encuesta_satisfaccion_padres.py"
     
-    #- name: Ejecutar carga a Salesforce - Encuesta Satisfacción Padres
-    #  run: python "etl/procesos/carga/05_encuesta_satisfaccion_padres.py"
+    - name: Ejecutar carga a Salesforce - Encuesta Satisfacción Padres
+      run: python "etl/procesos/carga/05_encuesta_satisfaccion_padres.py"
 
 # ============================================================
 # 🔹 FICHA SOCIAL
 # ============================================================
   
-    #- name: Ejecutar Ficha Social 2025 - Descargar
-    #  env:
-    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #  run: python "etl/procesos/2025/6. ficha_social/01_descargar.py"
+    - name: Ejecutar Ficha Social 2025 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/6. ficha_social/01_descargar.py"
     
-    #- name: Ejecutar Ficha Social 2025 - Transformación
-    #  run: python "etl/procesos/2025/6. ficha_social/02_transformacion.py"
+    - name: Ejecutar Ficha Social 2025 - Transformación
+      run: python "etl/procesos/2025/6. ficha_social/02_transformacion.py"
     
-    #- name: Debug archivos ficha social (TEMPORAL)
-    #  run: |
-    #    echo "=== ARCHIVOS DATA ==="
-    #    find data -type f | sort
+    - name: Debug archivos ficha social (TEMPORAL)
+      run: |
+        echo "=== ARCHIVOS DATA ==="
+        find data -type f | sort
     
-    #- name: Ejecutar Consolidación - Ficha Social
-    #  run: python "etl/procesos/consolidacion/6_ficha_social.py"
+    - name: Ejecutar Consolidación - Ficha Social
+      run: python "etl/procesos/consolidacion/6_ficha_social.py"
     
-    #- name: Ejecutar carga a Salesforce - Ficha Social
-    #  run: python "etl/procesos/carga/06_ficha_social.py"
+    - name: Ejecutar carga a Salesforce - Ficha Social
+      run: python "etl/procesos/carga/06_ficha_social.py"
 
 # ============================================================
 # 🔹 PROGRESO CURRICULAR
