@@ -3,8 +3,8 @@ import pandas as pd
 import unicodedata
 
 
-INPUT_FILE = Path("data/raw/2025/impacto_habilidades/pe25_ventanilla_proyectos_habilidades.xlsx")
-OUTPUT_DIR = Path("data/processed/2025/impacto_habilidades")
+INPUT_FILE = Path("data/raw/2025/11.habilidades/impacto_habilidades_2025.xlsx")
+OUTPUT_DIR = Path("data/processed/2025/11.habilidades")
 OUTPUT_FILE = OUTPUT_DIR / "BD_impacto_habilidades.csv"
 
 SHEETS_MAP = {
