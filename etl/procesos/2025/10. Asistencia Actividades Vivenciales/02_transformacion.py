@@ -2,8 +2,8 @@ from pathlib import Path
 import pandas as pd
 
 
-INPUT_FILE = Path("data/raw/2025/asistencia_actividades_vivenciales/cronograma_actividades_vivenciales_2025.xlsx")
-OUTPUT_DIR = Path("data/processed/2025/asistencia_actividades_vivenciales")
+INPUT_FILE = Path("data/raw/2025/10.asistencia_actividades_vivenciales/asistencia_actividades_vivenciales_2025.xlsx")
+OUTPUT_DIR = Path("data/processed/2025/10.asistencia_actividades_vivenciales")
 OUTPUT_FILE = OUTPUT_DIR / "BD_asistencia_actividades_vivenciales.csv"
 
 SHEET_NAME = "H4 Registro niños"
