@@ -190,6 +190,19 @@ Formulario_Satisfaccion = Formulario_Satisfaccion.rename(columns={
 print("✔ Columnas renombradas para Salesforce")
 
 # ==========================================================
+# DEBUG: guardar archivo final con columnas Salesforce
+# ==========================================================
+output_debug = "data/consolidated/encuesta_satisfaccion_padres/DEBUG_para_salesforce.csv"
+
+Formulario_Satisfaccion.to_csv(
+    output_debug,
+    index=False,
+    encoding="utf-8-sig"
+)
+
+print(f"📁 Archivo final guardado: {output_debug}")
+
+# ==========================================================
 # 8️⃣ Limpiar nulos para Salesforce
 # ==========================================================
 Formulario_Satisfaccion = Formulario_Satisfaccion.replace({
