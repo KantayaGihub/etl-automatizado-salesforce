@@ -18,7 +18,7 @@ FILE_NAME = os.getenv(
     "02 HORARIOS_AFTER SCHOOL 2025.xlsx"
 )
 
-RAW_DIR = Path("data/raw/2025/horario_regular")
+RAW_DIR = Path("data/raw/2025/10.horario_regular")
 RAW_FILE_PATH = RAW_DIR / "horario_regular_2025.xlsx"
 
 
