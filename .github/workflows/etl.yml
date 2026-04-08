@@ -108,30 +108,47 @@ jobs:
 # 🔹 ENCUESTA SATISFACCIÓN PADRES
 # ============================================================
     
-    - name: Ejecutar Encuesta Satisfacción Padres 2025 - Descargar
+    #- name: Ejecutar Encuesta Satisfacción Padres 2025 - Descargar
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/01_descarga.py"
+    
+    #- name: Ejecutar Encuesta Satisfacción Padres 2025 - Transformación
+    #  run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/02_transformacion.py"
+    
+    #- name: Debug archivos encuesta satisfacción padres (TEMPORAL)
+    #  run: |
+    #    echo "=== ARCHIVOS DATA ==="
+    #    find data -type f | sort
+    
+    #- name: Ejecutar Consolidación - Encuesta Satisfacción Padres
+    #  run: python "etl/procesos/consolidacion/5_encuesta_satisfaccion_padres.py"
+    
+    #- name: Ejecutar carga a Salesforce - Encuesta Satisfacción Padres
+    #  run: python "etl/procesos/carga/05_encuesta_satisfaccion_padres.py"
+
+# ============================================================
+# 🔹 FICHA SOCIAL
+# ============================================================
+  
+    - name: Ejecutar Ficha Social 2025 - Descargar
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/01_descarga.py"
+      run: python "etl/procesos/2025/6. ficha_social/01_descargar.py"
     
-    - name: Ejecutar Encuesta Satisfacción Padres 2025 - Transformación
-      run: python "etl/procesos/2025/5. encuesta_satisfaccion_padres/02_transformacion.py"
+    - name: Ejecutar Ficha Social 2025 - Transformación
+      run: python "etl/procesos/2025/6. ficha_social/02_transformacion.py"
     
-    - name: Debug archivos encuesta satisfacción padres (TEMPORAL)
+    - name: Debug archivos ficha social (TEMPORAL)
       run: |
         echo "=== ARCHIVOS DATA ==="
         find data -type f | sort
     
-    - name: Ejecutar Consolidación - Encuesta Satisfacción Padres
-      run: python "etl/procesos/consolidacion/5_encuesta_satisfaccion_padres.py"
+    - name: Ejecutar Consolidación - Ficha Social
+      run: python "etl/procesos/consolidacion/6_ficha_social.py"
     
-    - name: Ejecutar carga a Salesforce - Encuesta Satisfacción Padres
-      run: python "etl/procesos/carga/05_encuesta_satisfaccion_padres.py"
-
-
-
-
-
-
+    - name: Ejecutar carga a Salesforce - Ficha Social
+      run: python "etl/procesos/carga/06_ficha_social.py"
 
   # ============================================================
   # 🔹 HORARIO REGULAR
