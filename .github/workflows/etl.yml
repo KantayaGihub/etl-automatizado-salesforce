@@ -251,6 +251,8 @@ jobs:
     - name: Ejecutar Consolidación - Asistencia Actividades Vivenciales
       run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
 
+    - name: Ejecutar carga a Salesforce - Asistencia Actividades Vivenciales
+      run: python "etl/procesos/carga/10_asistencia_act_vivenciales.py"
 
  # ============================================================
  # 🔹 IMPACTO HABILIDADES
