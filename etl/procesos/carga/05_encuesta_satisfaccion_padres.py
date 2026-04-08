@@ -184,7 +184,10 @@ Formulario_Satisfaccion = Formulario_Satisfaccion.rename(columns={
     "Sabe reconocer las emociones que existen (ej: tristeza, enojo, alegría)": "Sabe_reconocer_las_emociones_que_existen__c",
     "No se detiene en sus intentos cuando no logra un objetivo": "No_se_detiene_en_sus_intentos_cuando_no__c",
     "Le cuesta identificar las capacidades y habilidades que posee": "Le_cuesta_identificar_las_capacidades_y__c",
-    "Reconoce el valor de su identidad": "Reconoce_el_valor_de_su_identidad__c"
+    "Reconoce el valor de su identidad": "Reconoce_el_valor_de_su_identidad__c",
+    "Considero que la cantidad de días que mi(s) hijo(s) fueron al Programa Kantaya fueron los adecuados .1": "Considero_que_la_cantidad_de_das_que_m_1__c",
+    "Considero que la cantidad de días que mi(s) hijo(s) fueron al Programa Kantaya fueron los adecuados  2": "Considero_que_la_cantidad_de_das_que_m_1__c",
+    "ANIO_FUENTE": "ANIO_FUENTE__c"
 })
 
 print("✔ Columnas renombradas para Salesforce")
