@@ -216,38 +216,41 @@ jobs:
 # 🔹 HORARIO REGULAR
 # ============================================================
     
-    - name: Ejecutar Horario Regular 2025 - Descargar
-      run: python "etl/procesos/2025/9. Horario regular/01_descarga.py"
+    #- name: Ejecutar Horario Regular 2025 - Descargar
+    #  run: python "etl/procesos/2025/9. Horario regular/01_descarga.py"
     
-    - name: Ejecutar Horario Regular 2025 - Transformación
-      run: python "etl/procesos/2025/9. Horario regular/02_transformacion.py"
+    #- name: Ejecutar Horario Regular 2025 - Transformación
+    #  run: python "etl/procesos/2025/9. Horario regular/02_transformacion.py"
     
-    - name: Debug archivos horario regular (TEMPORAL)
+    #- name: Debug archivos horario regular (TEMPORAL)
+    #  run: |
+    #    echo "=== ARCHIVOS DATA ==="
+    #    find data -type f | sort
+    
+    #- name: Ejecutar Consolidación - Horario Regular
+    #  run: python "etl/procesos/consolidacion/9_horario_regular.py"
+    
+    #- name: Ejecutar carga a Salesforce - Horario Regular
+    #  run: python "etl/procesos/carga/09_horario_regular.py"
+
+# ============================================================
+# 🔹 ASISTENCIA ACTIVIDADES VIVENCIALES
+# ============================================================
+    
+    - name: Ejecutar Asistencia Actividades Vivenciales 2025 - Descargar
+      run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/01_descarga.py"
+    
+    - name: Ejecutar Asistencia Actividades Vivenciales 2025 - Transformación
+      run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/02_transformacion.py"
+    
+    - name: Debug archivos asistencia actividades vivenciales (TEMPORAL)
       run: |
         echo "=== ARCHIVOS DATA ==="
         find data -type f | sort
     
-    - name: Ejecutar Consolidación - Horario Regular
-      run: python "etl/procesos/consolidacion/9_horario_regular.py"
-    
-    - name: Ejecutar carga a Salesforce - Horario Regular
-      run: python "etl/procesos/carga/09_horario_regular.py"
+    - name: Ejecutar Consolidación - Asistencia Actividades Vivenciales
+      run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
 
-
-
-  # ============================================================
-  # 🔹 ASISTENCIA ACTIVIDADES VIVENCIALES
-  # ============================================================
-
-    #- name: Actividades Vivenciales - Descargar
-    #  env:
-    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
-    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-    #    SHAREPOINT_FILE_NAME: 01 CRONOGRAMA DE VOLUNTARIADO 2025.xlsx
-    #  run: python "etl/procesos/2025/11. Asistencia Actividades Vivenciales/01_descarga.py"
-
-    #- name: Actividades Vivenciales - Transformación
-    #  run: python "etl/procesos/2025/11. Asistencia Actividades Vivenciales/02_transformacion.py"
 
  # ============================================================
  # 🔹 IMPACTO HABILIDADES
