@@ -154,26 +154,45 @@ jobs:
 # 🔹 PROGRESO CURRICULAR
 # ============================================================
 
-    - name: Ejecutar Progreso Curricular 2025 - Descargar
-      run: python "etl/procesos/2025/7. progreso_curricular/01_descarga.py"
+    #- name: Ejecutar Progreso Curricular 2025 - Descargar
+    #  run: python "etl/procesos/2025/7. progreso_curricular/01_descarga.py"
     
-    - name: Ejecutar Progreso Curricular 2025 - Transformación
-      run: python "etl/procesos/2025/7. progreso_curricular/02_transformacion.py"
+    #- name: Ejecutar Progreso Curricular 2025 - Transformación
+    #  run: python "etl/procesos/2025/7. progreso_curricular/02_transformacion.py"
     
-    - name: Debug archivos progreso curricular (TEMPORAL)
+    #- name: Debug archivos progreso curricular (TEMPORAL)
+    #  run: |
+    #    echo "=== ARCHIVOS DATA ==="
+    #    find data -type f | sort
+    
+    #- name: Ejecutar Consolidación - Progreso Curricular
+    #  run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
+    
+    #- name: Ejecutar carga a Salesforce - Progreso Curricular
+    #  run: python "etl/procesos/carga/07_progreso_curricular.py"
+
+# ============================================================
+# 🔹 SOLICITUD MATRÍCULA
+# ============================================================
+
+    - name: Ejecutar Solicitud Matrícula 2025 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2025/8. solicitud_matricula/01_descarga.py"
+    
+    - name: Ejecutar Solicitud Matrícula 2025 - Transformación
+      run: python "etl/procesos/2025/8. solicitud_matricula/02_transformacion.py"
+    
+    - name: Debug archivos solicitud matrícula (TEMPORAL)
       run: |
         echo "=== ARCHIVOS DATA ==="
         find data -type f | sort
     
-    - name: Ejecutar Consolidación - Progreso Curricular
-      run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
+    - name: Ejecutar Consolidación - Solicitud Matrícula
+      run: python "etl/procesos/consolidacion/8_solicitud_matricula.py"
     
-    - name: Ejecutar carga a Salesforce - Progreso Curricular
-      run: python "etl/procesos/carga/07_progreso_curricular.py"
-
-
-
-
+    - name: Ejecutar carga a Salesforce - Solicitud Matrícula
+      run: python "etl/procesos/carga/08_solicitud_matricula.py"
 
 
 
