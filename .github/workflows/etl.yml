@@ -237,40 +237,48 @@ jobs:
 # 🔹 ASISTENCIA ACTIVIDADES VIVENCIALES
 # ============================================================
     
-    - name: Ejecutar Asistencia Actividades Vivenciales 2025 - Descargar
-      run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/01_descarga.py"
+    #- name: Ejecutar Asistencia Actividades Vivenciales 2025 - Descargar
+    #  run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/01_descarga.py"
     
-    - name: Ejecutar Asistencia Actividades Vivenciales 2025 - Transformación
-      run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/02_transformacion.py"
+    #- name: Ejecutar Asistencia Actividades Vivenciales 2025 - Transformación
+    #  run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/02_transformacion.py"
     
-    - name: Debug archivos asistencia actividades vivenciales (TEMPORAL)
+    #- name: Debug archivos asistencia actividades vivenciales (TEMPORAL)
+    #  run: |
+    #    echo "=== ARCHIVOS DATA ==="
+    #    find data -type f | sort
+    
+    #- name: Ejecutar Consolidación - Asistencia Actividades Vivenciales
+    #  run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
+
+    #- name: Ejecutar carga a Salesforce - Asistencia Actividades Vivenciales
+    #  run: python "etl/procesos/carga/10_asistencia_act_vivenciales.py"
+
+# ============================================================
+# 🔹 IMPACTO HABILIDADES
+# ============================================================
+
+    - name: Ejecutar Habilidades 2025 - Descargar
+      run: python "etl/procesos/2025/11. Habilidades/01_descarga.py"
+    
+    - name: Ejecutar Habilidades 2025 - Transformación
+      run: python "etl/procesos/2025/11. Habilidades/02_transformacion.py"
+    
+    - name: Debug archivos habilidades (TEMPORAL)
       run: |
         echo "=== ARCHIVOS DATA ==="
         find data -type f | sort
     
-    - name: Ejecutar Consolidación - Asistencia Actividades Vivenciales
-      run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
-
-    - name: Ejecutar carga a Salesforce - Asistencia Actividades Vivenciales
-      run: python "etl/procesos/carga/10_asistencia_act_vivenciales.py"
-
- # ============================================================
- # 🔹 IMPACTO HABILIDADES
- # ============================================================
-
-    #- name: Impacto Habilidades - Descargar
-    #  env:
-    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
-    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-    #    SHAREPOINT_FILE_NAME: PE25_Ventanilla y proyectos_Habilidades.xlsx
-    #  run: python "etl/procesos/2025/12. Habilidades/01_descarga.py"
-
-    #- name: Impacto Habilidades - Transformación
-    #  run: python "etl/procesos/2025/12. Habilidades/02_transformacion.py"
+    - name: Ejecutar Consolidación - Habilidades
+      run: python "etl/procesos/consolidacion/11_habilidades.py"
     
-    # ============================================================
-    # 🔹 Artefactos
-    # ============================================================
+    - name: Ejecutar carga a Salesforce - Habilidades
+      run: python "etl/procesos/carga/11_habilidades.py"
+
+        
+# ============================================================
+# 🔹 Artefactos
+# ============================================================
          
     - name: Subir todos los artefactos
       uses: actions/upload-artifact@v4
