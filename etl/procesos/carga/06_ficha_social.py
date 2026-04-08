@@ -182,7 +182,8 @@ df = df.rename(columns=mapeo)
 df = df.drop(columns=["Apellido materno.1", 
                       "Nombre/s del apoderado 1 del niño/a",
                      "Apellido paterno.2",
-                      "Apellido paterno.1"
+                      "Apellido paterno.1",
+                      "Apellido materno.2"
                      ], errors="ignore")
 print("✔ Columnas renombradas para Salesforce")
 
