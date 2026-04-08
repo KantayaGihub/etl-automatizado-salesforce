@@ -2,25 +2,25 @@ import os
 from google.oauth2.service_account import Credentials
 from google.auth.transport.requests import AuthorizedSession
 
-print("=== Descargando Google Sheets (Encuesta de Satisfacción) ===")
+print("=== Descargando Google Sheets (Encuesta de Satisfacción Padres) ===")
 
-# Archivos a descargar
+# Archivos a descargar (RUTAS CORRECTAS)
 FILES = [
     {
         "id": "1dioUznUOz8vrisBVB3S2r0IcglSBmycnLu44R6N7jro",
-        "output": "entrada/Encuesta_Inicial_1y2.xlsx"
+        "output": "data/raw/2025/5.encuesta_satisfaccion_padres/Encuesta_Inicial_1y2.xlsx"
     },
     {
         "id": "1WhFrCWPOzEHWsXSiriVDNS4VLgdIFT4GJHgikaCuML4",
-        "output": "entrada/Encuesta_3y4.xlsx"
+        "output": "data/raw/2025/5.encuesta_satisfaccion_padres/Encuesta_3y4.xlsx"
     },
     {
         "id": "1DV2pXJTdBf-WucXlbY-6kK5YYj_U4wjOSaU85t8_cyI",
-        "output": "entrada/Encuesta_5y6.xlsx"
+        "output": "data/raw/2025/5.encuesta_satisfaccion_padres/Encuesta_5y6.xlsx"
     }
 ]
 
-# Autenticación con Service Account
+# Autenticación
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 SERVICE_ACCOUNT_JSON = os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
 
@@ -30,8 +30,11 @@ creds = Credentials.from_service_account_info(
 )
 
 authed = AuthorizedSession(creds)
-os.makedirs("entrada", exist_ok=True)
 
+# Crear carpeta correctamente
+os.makedirs("data/raw/2025/5.encuesta_satisfaccion_padres", exist_ok=True)
+
+# Descargar archivos
 for file in FILES:
     file_id = file["id"]
     output_path = file["output"]
@@ -52,4 +55,3 @@ for file in FILES:
     print(f"✓ Archivo descargado correctamente → {output_path}")
 
 print("\n🎉 Todos los archivos fueron descargados con éxito")
-
