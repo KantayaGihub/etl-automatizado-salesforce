@@ -64,38 +64,45 @@ jobs:
   # 🔹 MATRÍCULA
   # ============================================================
 
-    - name: Ejecutar Matrícula 2025 - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python "etl/procesos/2025/3. matricula/01_descarga.py"
+    #- name: Ejecutar Matrícula 2025 - Descargar
+    #  env:
+    #    GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #  run: python "etl/procesos/2025/3. matricula/01_descarga.py"
     
-    - name: Ejecutar Matrícula 2025 - Transformación
-      run: python "etl/procesos/2025/3. matricula/02_transformacion.py"
+    #- name: Ejecutar Matrícula 2025 - Transformación
+    #  run: python "etl/procesos/2025/3. matricula/02_transformacion.py"
     
-    - name: Debug archivos matrícula (TEMPORAL)
-      run: |
-        echo "=== ARCHIVOS DATA ==="
-        find data -type f | sort
+    #- name: Debug archivos matrícula (TEMPORAL)
+    #  run: |
+    #    echo "=== ARCHIVOS DATA ==="
+    #    find data -type f | sort
     
-    - name: Ejecutar Consolidación - Matrícula
-      run: python "etl/procesos/consolidacion/3_matricula.py"
+    #- name: Ejecutar Consolidación - Matrícula
+    #  run: python "etl/procesos/consolidacion/3_matricula.py"
     
-    - name: Ejecutar carga a Salesforce - Matrícula
-      run: python "etl/procesos/carga/03_matricula.py"
+    #- name: Ejecutar carga a Salesforce - Matrícula
+    #  run: python "etl/procesos/carga/03_matricula.py"
 
  # ============================================================
  # 🔹 CALIFICACIONES ÁREA COMPETENCIA
  # ============================================================
 
-    #- name: Calificaciones Área Competencia - Descargar
-    #  env:
-    #    SHAREPOINT_HOSTNAME: kantaya.sharepoint.com
-    #    SHAREPOINT_SITE_PATH: /sites/EducativoKantaya
-    #    SHAREPOINT_FILE_NAME: Comparativa_Ventanilla y proyectos_Power BI Provisional.xlsx
-    #  run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
-
-    #- name: Calificaciones Área Competencia - Transformación
-    #  run: python "etl/procesos/2025/4. calificaciones_area_competencia/02_transformacion.py"
+    - name: Ejecutar Calificaciones 2025 - Descargar
+      run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
+    
+    - name: Ejecutar Calificaciones 2025 - Transformación
+      run: python "etl/procesos/2025/4. calificaciones_area_competencia/02_transformacion.py"
+    
+    - name: Debug archivos calificaciones (TEMPORAL)
+      run: |
+        echo "=== ARCHIVOS DATA ==="
+        find data -type f | sort
+    
+    - name: Ejecutar Consolidación - Calificaciones
+      run: python "etl/procesos/consolidacion/4_calificaciones_area_competencia.py"
+    
+    - name: Ejecutar carga a Salesforce - Calificaciones
+      run: python "etl/procesos/carga/04_calificaciones_area_competencias.py"
 
   # ============================================================
   # 🔹 HORARIO REGULAR
