@@ -20,7 +20,7 @@ def leer_csv_seguro(ruta: Path, anio: str) -> pd.DataFrame:
 
     print(f"📂 Leyendo {anio}: {ruta}")
     df = pd.read_csv(ruta)
-    df["ANIO_FUENTE"] = anio
+    df["ANIO_FUENTE__c"] = anio
     print(f"   -> {len(df)} filas")
     return df
 
