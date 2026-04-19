@@ -93,9 +93,9 @@ jobs:
 
     - name: Ejecutar Calificaciones 2025 - Descargar
       env:
-            AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-            AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-            AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: python "etl/procesos/2025/4. calificaciones_area_competencia/01_descarga.py"
     
     - name: Ejecutar Calificaciones 2025 - Transformación
@@ -164,9 +164,9 @@ jobs:
 
     - name: Ejecutar Progreso Curricular 2025 - Descargar
       env:
-              AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-              AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-              AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       run: python "etl/procesos/2025/7. progreso_curricular/01_descarga.py"
     
     - name: Ejecutar Progreso Curricular 2025 - Transformación
