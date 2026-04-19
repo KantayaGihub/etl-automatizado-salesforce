@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from salesforce_bulk import SalesforceBulk
@@ -131,9 +132,9 @@ print("✔ Archivo preparado correctamente para Salesforce Bulk API")
 # 9️⃣ Reconexión Bulk API para inserción
 # ================================================================
 bulk = SalesforceBulk(
-    username='salesforce@kantayaperu.com.t4t',
-    password='4uto.KP26',
-    security_token='Urfjx1FzGoVLNSK0MlEKY16C',
+    username=SF_USERNAME,
+    password=SF_PASSWORD,
+    security_token=SF_SECURITY_TOKEN,
     sandbox=True
 )
 
