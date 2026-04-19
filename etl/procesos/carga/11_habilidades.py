@@ -10,25 +10,36 @@ from salesforce_bulk.util import IteratorBytesIO
 
 print("=== ELIMINACIÓN DE REGISTROS PREVIOS ===")
 
-# ==========================================================
-# 1️⃣ CONEXIÓN
-# ==========================================================
+# ================================================================
+# 1️⃣ Variables de entorno
+# ================================================================
+SF_USERNAME = os.getenv("SF_USERNAME")
+SF_PASSWORD = os.getenv("SF_PASSWORD")
+SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
+
+if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
+    raise ValueError(
+        "Faltan variables de entorno. Verifica SF_USERNAME, SF_PASSWORD y SF_SECURITY_TOKEN."
+    )
+
+# ================================================================
+# 1️⃣ Conexión a Salesforce
+# ================================================================
 sf = Salesforce(
-    username='salesforce@kantayaperu.com.t4t',
-    password='4uto.KP26',
-    security_token='Urfjx1FzGoVLNSK0MlEKY16C',
-    domain='test'
+    username=SF_USERNAME,
+    password=SF_PASSWORD,
+    security_token=SF_SECURITY_TOKEN,
+    domain="test"
 )
 
 bulk = SalesforceBulk(
-    username='salesforce@kantayaperu.com.t4t',
-    password='4uto.KP26',
-    security_token='Urfjx1FzGoVLNSK0MlEKY16C',
+    username=SF_USERNAME,
+    password=SF_PASSWORD,
+    security_token=SF_SECURITY_TOKEN,
     sandbox=True
 )
 
 OBJECT_NAME = "BD_Habilidades_e__c"
-
 
 # ==========================================================
 # 2️⃣ ELIMINAR REGISTROS EXISTENTES
