@@ -286,9 +286,9 @@ jobs:
 # 🔹 Artefactos
 # ============================================================
          
-##    - name: Subir todos los artefactos
-##      uses: actions/upload-artifact@v4
-##      with:
-##        name: data-artifacts
-##        path: data/**
+    - name: Subir todos los artefactos
+      uses: actions/upload-artifact@v4
+      with:
+        name: data-artifacts
+        path: data/**
 
