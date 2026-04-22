@@ -170,16 +170,6 @@ def codebook(df):
 
 # ---------- LECTURA DINÁMICA -------------------------------------------------
 def leer_rango_dinamico(path: Path, hoja: str) -> pd.DataFrame:
-    """
-    Lee el bloque de datos por hoja siguiendo esta estrategia:
-      1) Obtiene la fila de encabezados en C7 (header=FILA_ENCABEZADO).
-      2) Detecta las columnas de fecha presentes.
-      3) Define el rango: desde C hasta (última fecha + 3 columnas).
-      4) Lee el rango resultante con tipos 'object' y elimina filas/columnas vacías totales.
-
-    Nota: Esta función NO busca 'DNI' explícitamente; parte de la convención C7.
-    """
-    # 1) Leer solo la fila de encabezados
     try:
         header_row = pd.read_excel(
             path, sheet_name=hoja, header=None, skiprows=FILA_ENCABEZADO, nrows=1, engine="openpyxl"
@@ -188,20 +178,23 @@ def leer_rango_dinamico(path: Path, hoja: str) -> pd.DataFrame:
         print(f"  [ERROR] Encabezado {path.name} - {hoja}: {e}")
         return pd.DataFrame()
 
-    # 2) Detectar posiciones de fechas en los encabezados
     headers = header_row.iloc[0].tolist()
+    print(f"      headers detectados en {hoja}: {headers}")
+
     fechas_idx = detect_fecha_cols(headers)
+    print(f"      índices de fecha en {hoja}: {fechas_idx}")
+
     if not fechas_idx:
         print(f"  [AVISO] Sin fechas detectadas en {hoja}")
         return pd.DataFrame()
 
-    # 3) Calcular rango final (última fecha + 3 columnas)
     last_date_idx = max(fechas_idx)
     col_final_idx = min(len(headers) - 1, last_date_idx + 3)
     col_final_letter = get_excel_col_letter(col_final_idx)
     rango = f"{COLUMNA_INICIO}:{col_final_letter}"
 
-    # 4) Leer el bloque y limpiar vacíos absolutos
+    print(f"      rango leído en {hoja}: {rango}")
+
     try:
         df = pd.read_excel(
             path, sheet_name=hoja, header=FILA_ENCABEZADO, usecols=rango, dtype=object, engine="openpyxl"
@@ -364,42 +357,50 @@ def melt_por_fechas_preservando_totales(df: pd.DataFrame) -> pd.DataFrame:
 
 # ---------- PROCESO POR ARCHIVO ---------------------------------------------
 def procesar_archivo(path: Path) -> pd.DataFrame:
-    """
-    Procesa un libro Excel: filtra hojas de asistencia, extrae el rango dinámico,
-    normaliza nombres, convierte ancho→largo, agrega trazabilidad y TUTOR
-    (si se detecta), y devuelve un DataFrame por archivo.
-    """
     try:
         xls = pd.ExcelFile(path)
     except Exception as e:
         print(f"[ERROR] Abrir {path.name}: {e}")
         return pd.DataFrame()
 
+    print(f"\n📘 Archivo: {path.name}")
+    print(f"   Hojas disponibles: {xls.sheet_names}")
+
     hojas = [h for h in xls.sheet_names if is_asistencia_sheet(h)]
+    print(f"   Hojas de asistencia detectadas: {hojas}")
+
     if not hojas:
         return pd.DataFrame()
 
     frames = []
     for h in hojas:
+        print(f"   → Procesando hoja: {h}")
         tutor = extraer_tutor(path, h)
 
-        # 1) Rango dinámico C7 → última fecha + 3
         ancho = leer_rango_dinamico(path, h)
+        print(f"      shape ancho: {ancho.shape}")
+
         if ancho.empty:
+            print(f"      [DESCARTADA] hoja vacía o mal leída: {h}")
             continue
 
-        # 2) Unificar identidad en 'nombre_completo'
+        print(f"      columnas ancho: {list(ancho.columns)}")
+
         ancho = detectar_y_unificar_nombres(ancho)
-
-        # 3) Ancho → largo, preservando totales
         largo = melt_por_fechas_preservando_totales(ancho)
+
+        print(f"      shape largo: {largo.shape}")
+
         if largo.empty:
+            print(f"      [DESCARTADA] no se pudo hacer melt: {h}")
             continue
 
-        # 4) Trazabilidad + tutor
+        if "GRADO" in largo.columns:
+            print(f"      grados detectados en {h}: {largo['GRADO'].dropna().astype(str).unique().tolist()}")
+
         largo["archivo_origen"] = path.name
-        largo["hoja_origen"]    = h
-        largo["TUTOR"]          = tutor
+        largo["hoja_origen"] = h
+        largo["TUTOR"] = tutor
         frames.append(largo)
 
     return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
