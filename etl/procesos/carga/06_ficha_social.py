@@ -40,12 +40,12 @@ bulk = SalesforceBulk(
     sandbox=False
 )
 
-SF_OBJECT = "Ficha_social_e__c"
+OBJECT_NAME = "Progreso_curricular_e__c"
 
 # ==========================================================
 # 2️⃣ Eliminar registros previos del objeto
 # ==========================================================
-query = f"SELECT Id FROM {SF_OBJECT}"
+query = f"SELECT Id FROM {OBJECT_NAME}"
 records = sf.query_all(query)['records']
 
 if not records:
@@ -53,7 +53,7 @@ if not records:
 else:
     ids = [{"Id": r["Id"]} for r in records]
 
-    job = bulk.create_delete_job(SF_OBJECT, contentType='JSON')
+    job = bulk.create_delete_job(OBJECT_NAME, contentType='JSON')
 
     batch_size = 10000
     for i in range(0, len(ids), batch_size):
@@ -64,183 +64,103 @@ else:
     bulk.close_job(job)
     print(f"Se enviaron {len(ids)} registros para eliminación.")
 
-print("=== Iniciando carga a Salesforce (Ficha Social) ===")
+print("=== Cargando archivo consolidado ===")
 
 # ==========================================================
 # 3️⃣ Cargar consolidado
 # ==========================================================
-ruta_consolidado = Path("data/consolidated/ficha_social/Ficha_Social_v2.xlsx")
+INPUT_PATH = Path("data/consolidated/progreso_curricular/BD_Curricula_Consolidada.csv")
 
-if not ruta_consolidado.exists():
-    raise FileNotFoundError(f"No existe el consolidado: {ruta_consolidado}")
+if not INPUT_PATH.exists():
+    raise FileNotFoundError(f"No existe el consolidado: {INPUT_PATH}")
 
-df = pd.read_excel(
-    ruta_consolidado,
-    sheet_name="Ficha_Social_v2",
-    dtype={
-        "Número de Documento": str,
-        "Número de Documento.1": str,
-        "Número de documento del niño": str
-    }
-)
+Progreso_Curricular = pd.read_csv(INPUT_PATH)
 
-print(f"✔ Archivo leído correctamente: {len(df)} filas")
+print(f"✔ Archivo leído correctamente: {len(Progreso_Curricular)} filas")
 
 # ==========================================================
-# 4️⃣ Mapeo de columnas hacia Salesforce
+# 4️⃣ Mantener trazabilidad si existe
 # ==========================================================
-mapeo = {
-    "Marca temporal": "Marca_temporal__c",
-    "Dirección de correo electrónico": "Direccin_de_correo_electrnico__c",
-    "Nombre/s del niño/a": "Nombres_del_nioa__c",
-    "Apellido Paterno": "Apellido_Paterno__c",
-    "Apellido Materno": "Apellido_Materno__c",
-    "¿Es alérgico a algún medicamento?": "Es_alrgico_a_algn_medicamento__c",
-    "ID": "ID__c",
-    "¿A qué medicamento es alérgico?": "A_qu_medicamento_es_alrgico__c",
-    "Peso ": "Peso__c",
-    "Talla ": "Talla__c",
-    "¿Cuanto tiene de hemoglobina el niño/a? ": "Cuanto_tiene_de_hemoglobina_el_nioa__c",
-    "Número de estudiantes en el salón de su colegio:": "Nmero_de_estudiantes_en_el_saln_de_su__c",
-    "Religión que profesa la familia:": "Religin_que_profesa_la_familia__c",
-    "¿Alguna vez ha repetido un grado?": "Alguna_vez_ha_repetido_un_grado__c",
-    "¿Qué grado repitió?": "Qu_grado_repiti__c",
+if "ANIO_FUENTE" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"ANIO_FUENTE": "ANIO_FUENTE__c"}
+    )
+if "N DE PAGINAS" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"N DE PAGINAS": "N_DE_PAGINAS__c"}
+    )
+if "TEMA" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"TEMA": "TEMAS__c"}
+    )
 
-    "Nombre/S Del Apoderado 1 Del Niño/A": "NombreS_Del_Apoderado_1_Del_NioA__c",
-    "Apellido Paterno.1": "Apellido_Paterno1__c",
-    "Apellido Materno.1": "Apellido_materno_1__c",
-    "Parentesco": "Parentesco__c",
-    "Fecha de nacimiento": "Fecha_de_nacimiento__c",
-    "Documento de identidad": "Documento_de_identidad__c",
-    "Número de Documento": "Nmero_de_Documento__c",
+if "TEMAS" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"TEMAS": "TEMAS__c"}
+    )
+if "AREA" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"AREA": "AREA__c"}
+    )
 
-    "País de nacimiento": "Pas_de_nacimiento__c",
-    "Departamento de NACIMIENTO": "Departamento_de_NACIMIENTO__c",
-    "Departamento": "Departamento__c",
-    "Provincia": "Provincia__c",
-    "Distrito": "Distrito__c",
-    "Tipo de Zona": "Tipo_de_Zona__c",
-    "Dirección completa": "Direccin_completa__c",
-    "Punto de referencia": "Punto_de_referencia__c",
-    "¿Vive con el niño/a?": "Vive_con_el_nioa__c",
-    "¿Cuál es su grado de instrucción?": "Cul_es_su_grado_de_instruccin__c",
-    "¿Está laborando actualmente?": "Est_laborando_actualmente__c",
-    "¿Cuál es su condición laboral?": "Cul_es_su_condicin_laboral__c",
-    "¿Cuántas horas al dia laboras?": "Cuntas_horas_al_dia_laboras__c",
-    "¿En qué turno laboras?": "En_qu_turno_laboras__c",
+if "AREAS" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"AREAS": "AREA__c"}
+    )
 
-    "¿Deseas agregar un segundo apoderado?": "Deseas_agregar_un_segundo_apoderado__c",
+if "GRADO" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"GRADO": "GRADOS__c"}
+    )
 
-    "Nombre/s del apoderado 2 del niño/a": "Nombres_del_apoderado_2_del_nioa__c",
-    "Apellido paterno": "Apellido_paterno_1__c",
-    "Apellido materno": "Apellido_Materno1__c",
-    "Parentesco.1": "Parentesco1__c",
-    "Fecha de nacimiento.1": "Fecha_de_nacimiento1__c",
-    "Documento de identidad.1": "Documento_de_identidad1__c",
-    "Número de Documento.1": "Nmero_de_Documento1__c",
-
-    "País de nacimiento.1": "Pas_de_nacimiento1__c",
-    "Departamento de NACIMIENTO.1": "Departamento_de_NACIMIENTO1__c",
-    "Departamento.1": "Departamento1__c",
-    "Provincia.1": "Provincia1__c",
-    "Distrito.1": "Distrito1__c",
-    "Tipo de Zona.1": "Tipo_de_Zona1__c",
-    "Dirección Completa": "Direccin_Completa_1__c",
-    "Punto de referencia.1": "Punto_de_referencia1__c",
-    "¿Cuál es su grado de instrucción?.1": "Cul_es_su_grado_de_instruccin1__c",
-    "¿Está laborando actualmente?.1": "Est_laborando_actualmente1__c",
-    "¿Cuál es su condición laboral?.1": "Cul_es_su_condicin_laboral1__c",
-    "¿Cuántas horas al dia laboras?.1": "Cuntas_horas_al_dia_laboras1__c",
-    "¿En qué turno laboras?.1": "En_qu_turno_laboras1__c",
-
-    "¿Con cuántas personas vive el niño/a? (Sin contar al niño/a)": "Con_cuntas_personas_vive_el_nioa_S__c",
-    "¿Con quiénes vive el niño/a": "Con_quines_vive_el_nioa__c",
-    "¿Cuántas personas son mayores de edad?": "Cuntas_personas_son_mayores_de_edad__c",
-    "¿Cuál es el ingreso semanal del hogar en soles?": "Cul_es_el_ingreso_semanal_del_hogar_en__c",
-    "¿Cuántas personas aportan en el hogar?": "Cuntas_personas_aportan_en_el_hogar__c",
-    "¿Cuántas personas del hogar tienen una cuenta de banco?": "Cuntas_personas_del_hogar_tienen_una_c__c",
-    "¿Cuáles son los principales gastos del hogar?": "Cules_son_los_principales_gastos_del_h__c",
-
-    "¿Cuántas habitaciones tienes en total en el hogar?": "Cuntas_habitaciones_tienes_en_total_en__c",
-    "¿Cuántas habitaciones son destinadas para dormir?": "Cuntas_habitaciones_son_destinadas_par__c",
-    "Tipo de propiedad": "Tipo_de_propiedad__c",
-    "El pago de esta propiedad es": "El_pago_de_esta_propiedad_es__c",
-
-    "Cantidad de dispositivos que tienen acceso a internet (celular, laptop, tablet, etc.)":
-        "Cantidad_de_dispositivos_que_tienen_acce__c",
-
-    "Principal tipo de acceso a internet en el hogar":
-        "Principal_tipo_de_acceso_a_internet_en_e__c",
-
-    "¿El niño/a tiene acceso a un equipo con internet para hacer tareas?":
-        "El_nioa_tiene_acceso_a_un_equipo_con__c",
-
-    "En caso de haber seleccionado celular ¿qué operador tiene?":
-        "En_caso_de_haber_seleccionado_celular_q__c",
-
-    "¿Cuál es el material predominante del hogar?":
-        "Cul_es_el_material_predominante_del_ho__c",
-
-    "¿Con qué servicios básicos cuenta?": "Con_qu_servicios_bsicos_cuenta__c",
-    "¿Con qué electrodomésticos cuenta?": "Con_qu_electrodomsticos_cuenta__c",
-
-    "Número de documento del niño": "Nmero_de_documento_del_nio__c",
-    "Distrito.2": "Distrito2__c",
-    "Distrito.3": "Distrito3__c",
-
-    "ANIO_FUENTE": "ANIO_FUENTE__c"
-}
-
-df = df.rename(columns=mapeo)
-df = df.drop(columns=["Apellido materno.1", 
-                      "Nombre/s del apoderado 1 del niño/a",
-                     "Apellido paterno.2",
-                      "Apellido paterno.1",
-                      "Apellido materno.2"
-                     ], errors="ignore")
-print("✔ Columnas renombradas para Salesforce")
+if "GRADOS" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"GRADOS": "GRADOS__c"}
+    )
+    
+if "RECURSO Y/O ESTRATREGIA" in Progreso_Curricular.columns:
+    Progreso_Curricular = Progreso_Curricular.rename(
+        columns={"RECURSO Y/O ESTRATREGIA": "RECURSO_Y_O_ESTRATEGIA__c"}
+    )
 
 # ==========================================================
-# 5️⃣ Convertir fechas
+# 5️⃣ Agregar sufijo __c a columnas que aún no lo tienen
 # ==========================================================
-for col in ["Marca_temporal__c", "Fecha_de_nacimiento__c", "Fecha_de_nacimiento1__c"]:
-    if col in df.columns:
-        df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
-        df[col] = df[col].apply(lambda x: x.strftime("%Y-%m-%d") if pd.notnull(x) else None)
+Progreso_Curricular.columns = [
+    col if str(col).endswith("__c") else f"{col}__c"
+    for col in Progreso_Curricular.columns
+]
 
 # ==========================================================
-# 6️⃣ Limpiar NaN para Salesforce
+# 6️⃣ Reemplazar nulos
 # ==========================================================
-df = df.replace({np.nan: None, pd.NA: None})
+Progreso_Curricular = Progreso_Curricular.where(pd.notnull(Progreso_Curricular), None)
+Progreso_Curricular = Progreso_Curricular.replace({
+    float('nan'): None,
+    pd.NA: None,
+    np.nan: None
+})
 
 # ==========================================================
-# 7️⃣ Convertir todo a string excepto fechas ya tratadas
+# 7️⃣ Debug opcional
 # ==========================================================
-for col in df.columns:
-    if col not in ["Marca_temporal__c", "Fecha_de_nacimiento__c", "Fecha_de_nacimiento1__c"]:
-        df[col] = df[col].astype(str)
-
-df = df.replace({"nan": None, "None": None, "NaT": None})
-
-# ==========================================================
-# 8️⃣ Debug opcional: guardar archivo final para revisar columnas
-# ==========================================================
-output_debug = Path("data/consolidated/ficha_social/DEBUG_para_salesforce.xlsx")
+output_debug = Path("data/consolidated/progreso_curricular/DEBUG_para_salesforce.csv")
 output_debug.parent.mkdir(parents=True, exist_ok=True)
-df.to_excel(output_debug, index=False)
+Progreso_Curricular.to_csv(output_debug, index=False, encoding="utf-8-sig")
 print(f"📁 Archivo final guardado para revisión: {output_debug}")
 
 # ==========================================================
-# 9️⃣ Convertir a records
+# 8️⃣ Convertir DataFrame a lista de diccionarios
 # ==========================================================
-records = df.to_dict("records")
+records = Progreso_Curricular.to_dict('records')
 
 # ==========================================================
-# 🔟 Insertar en Salesforce
+# 9️⃣ Crear job para insertar
 # ==========================================================
-job = bulk.create_insert_job(SF_OBJECT, contentType='JSON')
+job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
 
 batch_size = 1000
+
 for i in range(0, len(records), batch_size):
     batch_records = records[i:i+batch_size]
     json_data = json.dumps(
@@ -254,5 +174,4 @@ for i in range(0, len(records), batch_size):
 
 bulk.close_job(job)
 
-print("✅ Proceso enviado a Salesforce")
-print("✅ ETL completado y enviado a Salesforce.")
+print("✅ Proceso enviado a Salesforce. Revisa resultados con bulk.get_all_batches(job)")
