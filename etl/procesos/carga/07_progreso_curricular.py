@@ -30,14 +30,14 @@ sf = Salesforce(
     username=SF_USERNAME,
     password=SF_PASSWORD,
     security_token=SF_SECURITY_TOKEN,
-    domain="test"
+    domain="login"
 )
 
 bulk = SalesforceBulk(
     username=SF_USERNAME,
     password=SF_PASSWORD,
     security_token=SF_SECURITY_TOKEN,
-    sandbox=True
+    sandbox=False
 )
 
 OBJECT_NAME = "Progreso_curricular_e__c"
