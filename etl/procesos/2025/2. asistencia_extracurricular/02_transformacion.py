@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 """
 CONSOLIDACIÓN DE LISTAS DE ASISTENCIA EXTRACURRICULAR
 -----------------------------------------------------
+VERSIÓN FINAL ESTABLE
 """
 
 import pandas as pd
@@ -19,8 +21,10 @@ CARPETA_SALIDA = Path("data/processed/2025/asistencias_extracurriculares")
 EXTS = {".xlsx", ".xls", ".xlsm"}
 
 SALIDA = CARPETA_SALIDA / "asistencias_extra_consolidado_kantaya.csv"
+
 SALIDA_CALIDAD = (
-    CARPETA_SALIDA / "asistencias_extraconsolidado_kantaya_CALIDAD.xlsx"
+    CARPETA_SALIDA /
+    "asistencias_extraconsolidado_kantaya_CALIDAD.xlsx"
 )
 
 MAX_FILAS_BUSQUEDA_HEADER = 20
@@ -35,6 +39,7 @@ print(f"📂 Procesando desde: {CARPETA}")
 # UTILS
 # =============================================================================
 def norm_key(s):
+
     if s is None:
         return ""
 
@@ -50,15 +55,23 @@ def norm_key(s):
 
 
 def is_asistencia_sheet(name):
+
     n = norm_key(name)
-    return "asist" in n or "asistencia" in n
+
+    return (
+        "asist" in n
+        or "asistencia" in n
+    )
 
 
 def excel_col(idx):
+
     letters = ""
+
     while idx >= 0:
         letters = chr(idx % 26 + 65) + letters
         idx = idx // 26 - 1
+
     return letters
 
 
@@ -70,21 +83,24 @@ def parse_excel_date_like(val):
     if pd.isna(val):
         return None
 
-    # datetime directo
+    # datetime
     if isinstance(val, (pd.Timestamp, np.datetime64)):
         try:
             return pd.to_datetime(val)
         except Exception:
             return None
 
-    # serial excel válido
+    # serial excel
     if isinstance(val, (int, float)):
+
         if 20000 < float(val) < 60000:
+
             try:
                 return (
                     pd.to_datetime("1899-12-30")
                     + pd.to_timedelta(float(val), unit="D")
                 )
+
             except Exception:
                 return None
 
@@ -94,30 +110,35 @@ def parse_excel_date_like(val):
         return None
 
     meses = {
-        "mar", "abr", "may", "jun", "jul",
-        "ago", "set", "sep", "oct", "nov", "dic"
+        "mar", "abr", "may", "jun",
+        "jul", "ago", "set", "sep",
+        "oct", "nov", "dic"
     }
 
     if norm_key(s) in meses:
         return None
 
-    # formato yyyy-mm-dd hh:mm:ss
+    # yyyy-mm-dd
     if re.match(r"^\d{4}-\d{2}-\d{2}", s):
+
         try:
             return pd.to_datetime(
                 s,
                 errors="raise",
                 dayfirst=False
             )
+
         except Exception:
             return None
 
+    # fechas normales
     try:
         return pd.to_datetime(
             s,
             errors="raise",
             dayfirst=True
         )
+
     except Exception:
         return None
 
@@ -167,6 +188,7 @@ def detectar_fila_encabezado(path, hoja):
 def extraer_tutor(path, hoja):
 
     try:
+
         tmp = pd.read_excel(
             path,
             sheet_name=hoja,
@@ -178,7 +200,10 @@ def extraer_tutor(path, hoja):
     except Exception:
         return None
 
-    patron = re.compile(r"tutor[a]?:", flags=re.IGNORECASE)
+    patron = re.compile(
+        r"tutor[a]?:",
+        flags=re.IGNORECASE
+    )
 
     for _, row in tmp.iterrows():
 
@@ -204,7 +229,9 @@ def leer_rango_dinamico(path, hoja):
     fila_header = detectar_fila_encabezado(path, hoja)
 
     if fila_header is None:
+
         print(f"  [AVISO] header no detectado: {hoja}")
+
         return pd.DataFrame()
 
     print(f"      fila header: {fila_header}")
@@ -230,13 +257,18 @@ def leer_rango_dinamico(path, hoja):
             fecha_idx.append(i)
 
     if not fecha_idx:
+
         print(f"  [AVISO] sin fechas: {hoja}")
+
         return pd.DataFrame()
 
     last_date_idx = max(fecha_idx)
 
-    # +3 columnas de totales
-    final_idx = min(len(headers) - 1, last_date_idx + 3)
+    # +3 columnas posteriores
+    final_idx = min(
+        len(headers) - 1,
+        last_date_idx + 3
+    )
 
     rango = f"A:{excel_col(final_idx)}"
 
@@ -251,27 +283,29 @@ def leer_rango_dinamico(path, hoja):
         engine="openpyxl"
     )
 
-    # SOLO eliminar filas vacías
-    # NO eliminar columnas porque rompe índices
+    # eliminar filas vacías
     df = df.dropna(axis=0, how="all")
 
-    # normalizar unnamed
-    cols = []
+    # eliminar unnamed vacías
+    drop_cols = []
 
-    for i, c in enumerate(df.columns):
+    for c in df.columns:
 
         if str(c).startswith("Unnamed"):
-            cols.append(f"UNNAMED_{i}")
-        else:
-            cols.append(c)
 
-    df.columns = cols
+            serie = df[c]
+
+            if serie.isna().all():
+                drop_cols.append(c)
+
+    if drop_cols:
+        df = df.drop(columns=drop_cols)
 
     return df
 
 
 # =============================================================================
-# NOMBRES
+# NOMBRE COMPLETO
 # =============================================================================
 def detectar_y_unificar_nombres(df):
 
@@ -289,8 +323,6 @@ def detectar_y_unificar_nombres(df):
                     return orig
 
         return None
-
-    dni_col = find_col([r"\bdni\b"])
 
     nombre_col = find_col([
         r"\bapellidos?\s*y\s*nombres?\b",
@@ -341,7 +373,10 @@ def melt_por_fechas_preservando_totales(df):
     # columnas posteriores
     tail_cols = []
 
-    for i in range(last_date_pos + 1, min(last_date_pos + 4, len(cols))):
+    for i in range(
+        last_date_pos + 1,
+        min(last_date_pos + 4, len(cols))
+    ):
         tail_cols.append(cols[i])
 
     rename_tail = {}
@@ -366,16 +401,11 @@ def melt_por_fechas_preservando_totales(df):
         if x in df.columns
     ]
 
-    # IMPORTANTE
-    # recalcular cols después rename
+    # recalcular cols
     cols = list(df.columns)
 
-    id_vars = []
-
-    for c in cols:
-
-        if c not in value_vars:
-            id_vars.append(c)
+    # ESTE ERA EL BUG
+    id_vars = cols[:first_date_pos] + tail_final
 
     print(f"      id_vars: {id_vars}")
 
@@ -411,7 +441,7 @@ def codebook(df):
 
 
 # =============================================================================
-# PROCESAMIENTO ARCHIVO
+# PROCESAR ARCHIVO
 # =============================================================================
 def procesar_archivo(path):
 
@@ -419,7 +449,9 @@ def procesar_archivo(path):
         xls = pd.ExcelFile(path)
 
     except Exception as e:
+
         print(f"[ERROR] {path.name}: {e}")
+
         return pd.DataFrame()
 
     hojas = [
@@ -503,7 +535,9 @@ def main():
             all_frames.append(df)
 
     if not all_frames:
+
         print("⚠️ Sin datos")
+
         return
 
     big = pd.concat(all_frames, ignore_index=True)
@@ -511,7 +545,10 @@ def main():
     # =========================================================================
     # DNI
     # =========================================================================
-    dni_cols = [c for c in big.columns if "dni" in norm_key(c)]
+    dni_cols = [
+        c for c in big.columns
+        if "dni" in norm_key(c)
+    ]
 
     if dni_cols:
 
@@ -565,12 +602,16 @@ def main():
         .astype(str)
         .str.replace(r"\.xlsx$|\.xlsm$|\.xls$", "", regex=True)
         .str.replace("TALLERES_", "", regex=False)
-        .str.replace(" REGISTRO DE ASISTENCIA 2025", "", regex=False)
+        .str.replace(
+            " REGISTRO DE ASISTENCIA 2025",
+            "",
+            regex=False
+        )
         .str.strip()
     )
 
     # =========================================================================
-    # RENAME
+    # ORDEN FINAL
     # =========================================================================
     orden_renombre = [
         ("DNI", "DNI"),
@@ -604,12 +645,19 @@ def main():
         for x in orden_renombre
     }
 
-    big = big[cols_orden].rename(columns=rename_map)
+    big = (
+        big[cols_orden]
+        .rename(columns=rename_map)
+    )
 
     # =========================================================================
     # FECHAS
     # =========================================================================
-    for c in ["FECHA", "F_INCORPORACION", "F_SALIDA"]:
+    for c in [
+        "FECHA",
+        "F_INCORPORACION",
+        "F_SALIDA"
+    ]:
 
         if c in big.columns:
 
@@ -622,7 +670,7 @@ def main():
             big[c] = dt.dt.strftime("%d/%m/%Y")
 
     # =========================================================================
-    # DEBUG GRADO
+    # DEBUG
     # =========================================================================
     print("\n📌 grados finales")
 
@@ -630,22 +678,6 @@ def main():
         big["GRADO"]
         .astype(str)
         .value_counts(dropna=False)
-    )
-
-    print("\n📌 únicos grado")
-
-    print(
-        big["GRADO"]
-        .dropna()
-        .astype(str)
-        .unique()
-    )
-
-    print("\n📌 muestra segundo")
-
-    print(
-        big[big["GRADO"] == "SEGUNDO"]
-        .head()
     )
 
     # =========================================================================
@@ -662,7 +694,7 @@ def main():
         encoding="utf-8-sig"
     )
 
-    # VALIDACIÓN REAL CSV
+    # validación real
     print("\n🔎 validando csv exportado")
 
     validacion = pd.read_csv(SALIDA)
@@ -672,6 +704,7 @@ def main():
         .value_counts(dropna=False)
     )
 
+    # calidad
     df_calidad = codebook(big)
 
     df_calidad.to_excel(
