@@ -1,5 +1,3 @@
-
-# -*- coding: utf-8 -*-
 """
 CONSOLIDACIÓN DE LISTAS DE ASISTENCIA EXTRACURRICULAR
 -----------------------------------------------------
@@ -13,384 +11,318 @@ from pathlib import Path
 
 
 # =============================================================================
-# CONFIGURACIÓN
+# CONFIG
 # =============================================================================
 CARPETA = Path("data/raw/2025/asistencias_extracurriculares")
 CARPETA_SALIDA = Path("data/processed/2025/asistencias_extracurriculares")
 
 EXTS = {".xlsx", ".xls", ".xlsm"}
-COLUMNA_INICIO = "A"
-MAX_FILAS_BUSQUEDA_HEADER = 20
 
 SALIDA = CARPETA_SALIDA / "asistencias_extra_consolidado_kantaya.csv"
-SALIDA_CALIDAD = CARPETA_SALIDA / "asistencias_extraconsolidado_kantaya_CALIDAD.xlsx"
+SALIDA_CALIDAD = (
+    CARPETA_SALIDA / "asistencias_extraconsolidado_kantaya_CALIDAD.xlsx"
+)
+
+MAX_FILAS_BUSQUEDA_HEADER = 20
 
 if not CARPETA.exists():
-    raise Exception(f"❌ La carpeta de entrada no existe: {CARPETA}")
-else:
-    print(f"📂 Procesando archivos desde: {CARPETA}")
+    raise Exception(f"❌ No existe carpeta: {CARPETA}")
+
+print(f"📂 Procesando desde: {CARPETA}")
 
 
 # =============================================================================
-# UTILIDADES
+# UTILS
 # =============================================================================
-def norm_key(s: str) -> str:
-    """Normaliza cadenas para comparaciones robustas."""
+def norm_key(s):
     if s is None:
         return ""
+
     s = str(s)
-    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
-    s = re.sub(r"[^\w\s]", " ", s, flags=re.UNICODE)
-    s = re.sub(r"\s+", " ", s).strip().lower()
-    return s
+
+    s = unicodedata.normalize("NFKD", s)
+    s = s.encode("ascii", "ignore").decode("ascii")
+
+    s = re.sub(r"[^\w\s]", " ", s)
+    s = re.sub(r"\s+", " ", s)
+
+    return s.strip().lower()
 
 
-def is_asistencia_sheet(name: str) -> bool:
-    """Detecta hojas de asistencia."""
+def is_asistencia_sheet(name):
     n = norm_key(name)
-    return ("asist" in n or "asistencia" in n) or ("asis" in n and "ist" in n)
+    return "asist" in n or "asistencia" in n
 
 
-def get_excel_col_letter(idx0: int) -> str:
-    """Convierte índice base 0 a letra Excel."""
-    n = idx0
+def excel_col(idx):
     letters = ""
-    while n >= 0:
-        letters = chr(n % 26 + 65) + letters
-        n = n // 26 - 1
+    while idx >= 0:
+        letters = chr(idx % 26 + 65) + letters
+        idx = idx // 26 - 1
     return letters
 
 
+# =============================================================================
+# FECHAS
+# =============================================================================
 def parse_excel_date_like(val):
-    """
-    Intenta interpretar si un valor parece fecha real.
-    Evita confundir enteros chicos como 1, 2, 3 con fechas.
-    """
+
     if pd.isna(val):
         return None
 
-    # Timestamp / datetime
+    # datetime directo
     if isinstance(val, (pd.Timestamp, np.datetime64)):
         try:
             return pd.to_datetime(val)
         except Exception:
             return None
 
-    # Serial Excel razonable
-    if isinstance(val, (int, float)) and 20000 < float(val) < 60000:
-        try:
-            return pd.to_datetime("1899-12-30") + pd.to_timedelta(float(val), unit="D")
-        except Exception:
-            return None
+    # serial excel válido
+    if isinstance(val, (int, float)):
+        if 20000 < float(val) < 60000:
+            try:
+                return (
+                    pd.to_datetime("1899-12-30")
+                    + pd.to_timedelta(float(val), unit="D")
+                )
+            except Exception:
+                return None
 
-    # String parseable
     s = str(val).strip()
+
     if not s:
         return None
 
-    # Evitar interpretar etiquetas como MAR, ABR, etc.
-    if norm_key(s) in {"mar", "abr", "may", "jun", "jul", "ago", "set", "sep", "oct", "nov", "dic"}:
+    meses = {
+        "mar", "abr", "may", "jun", "jul",
+        "ago", "set", "sep", "oct", "nov", "dic"
+    }
+
+    if norm_key(s) in meses:
         return None
 
+    # formato yyyy-mm-dd hh:mm:ss
+    if re.match(r"^\d{4}-\d{2}-\d{2}", s):
+        try:
+            return pd.to_datetime(
+                s,
+                errors="raise",
+                dayfirst=False
+            )
+        except Exception:
+            return None
+
     try:
-        dt = pd.to_datetime(s, errors="raise", dayfirst=True)
-        return dt
-    except Exception:
-        return None
-
-
-def detect_fecha_cols(headers):
-    """Detecta posiciones de columnas que parecen fechas."""
-    fechas_idx = []
-    for i, val in enumerate(headers):
-        dt = parse_excel_date_like(val)
-        if dt is not None:
-            fechas_idx.append(i)
-    return fechas_idx
-
-
-def extraer_tutor(path: Path, hoja: str) -> str:
-    """Extrae TUTOR/TUTORA desde las primeras filas."""
-    try:
-        df_header = pd.read_excel(path, sheet_name=hoja, header=None, nrows=10, engine="openpyxl")
-    except Exception:
-        return None
-
-    patron = re.compile(r"tutor[a]?:", flags=re.IGNORECASE)
-    for _, row in df_header.iterrows():
-        for i, val in enumerate(row):
-            if isinstance(val, str) and patron.search(val):
-                if i + 1 < len(row):
-                    nombre_tutor = str(row[i + 1]).strip()
-                    if nombre_tutor and nombre_tutor.lower() != "nan":
-                        return nombre_tutor
-    return None
-
-
-def detectar_fila_encabezado(path: Path, hoja: str, max_filas=20):
-    """
-    Detecta dinámicamente la fila real de encabezado.
-    Busca una fila que contenga al menos DNI y GRADO, idealmente también SEXO o APELLIDOS.
-    """
-    try:
-        preview = pd.read_excel(
-            path,
-            sheet_name=hoja,
-            header=None,
-            nrows=max_filas,
-            engine="openpyxl"
+        return pd.to_datetime(
+            s,
+            errors="raise",
+            dayfirst=True
         )
-    except Exception as e:
-        print(f"  [ERROR] No se pudo leer preview de {path.name} - {hoja}: {e}")
+    except Exception:
         return None
+
+
+# =============================================================================
+# HEADER DETECTION
+# =============================================================================
+def detectar_fila_encabezado(path, hoja):
+
+    preview = pd.read_excel(
+        path,
+        sheet_name=hoja,
+        header=None,
+        nrows=MAX_FILAS_BUSQUEDA_HEADER,
+        engine="openpyxl"
+    )
 
     for i, row in preview.iterrows():
-        vals = [str(x).strip().upper() for x in row.tolist() if pd.notna(x)]
+
+        vals = [
+            str(x).strip().upper()
+            for x in row.tolist()
+            if pd.notna(x)
+        ]
 
         tiene_dni = "DNI" in vals
         tiene_grado = "GRADO" in vals
-        tiene_sexo = "SEXO" in vals
-        tiene_nombre = any(v in vals for v in ["APELLIDOS Y NOMBRES", "NOMBRES Y APELLIDOS", "NOMBRE COMPLETO"])
 
-        if tiene_dni and tiene_grado and (tiene_sexo or tiene_nombre):
+        tiene_nombre = any(
+            x in vals
+            for x in [
+                "APELLIDOS Y NOMBRES",
+                "NOMBRES Y APELLIDOS",
+                "NOMBRE COMPLETO"
+            ]
+        )
+
+        if tiene_dni and tiene_grado and tiene_nombre:
             return i
 
     return None
 
 
-def codebook(df):
-    """Genera reporte de calidad."""
-    print("   Calculando tipos, nulos y únicos...")
-    resumen = pd.DataFrame({
-        "Tipo": df.dtypes.astype(str),
-        "Nulos (#)": df.isnull().sum(),
-        "Porcentaje Nulos (%)": ((df.isnull().sum() / len(df)) * 100).round(2),
-        "Valores únicos (#)": df.nunique(dropna=True),
-    })
+# =============================================================================
+# TUTOR
+# =============================================================================
+def extraer_tutor(path, hoja):
 
-    print("   Calculando min/max numéricos...")
-    resumen["Mínimo"] = df.apply(
-        lambda x: x.min(skipna=True) if pd.api.types.is_numeric_dtype(x) else None
-    )
-    resumen["Máximo"] = df.apply(
-        lambda x: x.max(skipna=True) if pd.api.types.is_numeric_dtype(x) else None
-    )
+    try:
+        tmp = pd.read_excel(
+            path,
+            sheet_name=hoja,
+            header=None,
+            nrows=10,
+            engine="openpyxl"
+        )
 
-    print("   Verificando valores duplicados...")
-    resumen["Duplicados (Valores)"] = "No"
+    except Exception:
+        return None
 
-    if "DNI" in df.columns:
-        total_dups_dni = df["DNI"].dropna().duplicated().sum()
-        if total_dups_dni > 0:
-            print(f"   -> ALERTA PK (DNI): {total_dups_dni} duplicados encontrados.")
-            if "DNI" in resumen.index:
-                resumen.loc["DNI", "Duplicados (Valores)"] = f"¡SÍ! ({total_dups_dni} duplicados)"
-        else:
-            print("   -> Verificación PK (DNI): OK (0 duplicados).")
-            if "DNI" in resumen.index:
-                resumen.loc["DNI", "Duplicados (Valores)"] = "No (PK Válida)"
+    patron = re.compile(r"tutor[a]?:", flags=re.IGNORECASE)
 
-    for col in df.columns:
-        if col != "DNI" and df[col].duplicated().any():
-            resumen.loc[col, "Duplicados (Valores)"] = "Sí"
+    for _, row in tmp.iterrows():
 
-    print("   Extrayendo muestra de valores únicos...")
-    def get_unique_values(x):
-        unicos = x.dropna().unique()
-        if x.nunique(dropna=True) > 50:
-            return f"({x.nunique(dropna=True)} valores) Ej: {str(list(unicos[:5]))}"
-        return str(list(unicos))
+        for i, val in enumerate(row):
 
-    resumen["Valores únicos (Muestra)"] = df.apply(get_unique_values)
-    resumen = resumen.reset_index().rename(columns={"index": "Variable"})
-    return resumen
+            if isinstance(val, str) and patron.search(val):
+
+                if i + 1 < len(row):
+
+                    nombre = str(row[i + 1]).strip()
+
+                    if nombre and nombre.lower() != "nan":
+                        return nombre
+
+    return None
 
 
 # =============================================================================
 # LECTURA DINÁMICA
 # =============================================================================
-def leer_rango_dinamico(path: Path, hoja: str) -> pd.DataFrame:
-    """
-    Lee una hoja identificando dinámicamente:
-    - la fila de encabezado real,
-    - las columnas de fechas,
-    - y las 3 columnas posteriores de totales.
-    """
-    fila_header = detectar_fila_encabezado(path, hoja, MAX_FILAS_BUSQUEDA_HEADER)
+def leer_rango_dinamico(path, hoja):
+
+    fila_header = detectar_fila_encabezado(path, hoja)
 
     if fila_header is None:
-        print(f"  [AVISO] No se encontró fila de encabezado en {hoja}")
+        print(f"  [AVISO] header no detectado: {hoja}")
         return pd.DataFrame()
 
-    print(f"      fila encabezado detectada en {hoja}: {fila_header}")
+    print(f"      fila header: {fila_header}")
 
-    try:
-        header_row = pd.read_excel(
-            path,
-            sheet_name=hoja,
-            header=None,
-            skiprows=fila_header,
-            nrows=1,
-            engine="openpyxl"
-        )
-    except Exception as e:
-        print(f"  [ERROR] Encabezado {path.name} - {hoja}: {e}")
-        return pd.DataFrame()
-
-    headers = header_row.iloc[0].tolist()
-    print(f"      headers detectados en {hoja}: {headers}")
-
-    fechas_idx = detect_fecha_cols(headers)
-    print(f"      índices de fecha en {hoja}: {fechas_idx}")
-
-    if not fechas_idx:
-        print(f"  [AVISO] Sin fechas detectadas en {hoja}")
-        return pd.DataFrame()
-
-    last_date_idx = max(fechas_idx)
-    col_final_idx = min(len(headers) - 1, last_date_idx + 3)
-    col_final_letter = get_excel_col_letter(col_final_idx)
-    rango = f"{COLUMNA_INICIO}:{col_final_letter}"
-
-    print(f"      rango leído en {hoja}: {rango}")
-
-    try:
-        df = pd.read_excel(
-            path,
-            sheet_name=hoja,
-            header=fila_header,
-            usecols=rango,
-            dtype=object,
-            engine="openpyxl"
-        )
-        df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
-
-        # Eliminar columnas totalmente 'Unnamed' vacías si quedaron
-        cols_validas = []
-        for c in df.columns:
-            if str(c).startswith("Unnamed"):
-                if df[c].notna().any():
-                    cols_validas.append(c)
-            else:
-                cols_validas.append(c)
-        df = df[cols_validas]
-
-        return df
-
-    except Exception as e:
-        print(f"  [ERROR] Datos {path.name} - {hoja}: {e}")
-        return pd.DataFrame()
-
-
-# =============================================================================
-# NORMALIZACIÓN DE IDENTIDAD
-# =============================================================================
-def _clean_text_series(s: pd.Series) -> pd.Series:
-    return s.astype(str).str.replace(r"\s+", " ", regex=True).str.strip()
-
-
-def detectar_y_unificar_nombres(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Construye nombre_completo a partir de columnas disponibles.
-    """
-    cols = list(df.columns)
-    norm_map = [(c, norm_key(c)) for c in cols]
-
-    def _find_col(patterns):
-        for orig, nk in norm_map:
-            for pat in patterns:
-                if re.search(pat, nk):
-                    return orig
-        return None
-
-    dni_col = _find_col([r"\bdni\b", r"\bn[_\.\s]*dni\b"])
-    nombres_col = _find_col([r"\bnombres?\b", r"\bnombre\b"])
-    ap_pat_col = _find_col([r"\bapellido\s*paterno\b", r"\bap[e\. ]*pat(?:erno)?\b", r"\bpaterno\b"])
-    ap_mat_col = _find_col([r"\bapellido\s*materno\b", r"\bap[e\. ]*mat(?:erno)?\b", r"\bmaterno\b"])
-    apellidos_col = _find_col([r"\bapellidos?\b", r"\bapellidoynombres?\b", r"\bapellidosy?nombres?\b"])
-    unico_nombre_col = _find_col([
-        r"\bapellidos?\s*y\s*nombres?\b",
-        r"\bnombres?\s*y\s*apellidos?\b",
-        r"\bnombre\s*y\s*apellid",
-        r"\bnombre\s*completo\b",
-        r"\balumno\b",
-        r"\bnombre\b"
-    ])
-
-    if nombres_col is not None and ap_pat_col is not None:
-        n = _clean_text_series(df[nombres_col].fillna(""))
-        ap1 = _clean_text_series(df[ap_pat_col].fillna(""))
-        if ap_mat_col is not None:
-            ap2 = _clean_text_series(df[ap_mat_col].fillna(""))
-            nombre_completo = ap1 + " " + ap2 + ", " + n
-            drop_used = [nombres_col, ap_pat_col, ap_mat_col]
-        else:
-            nombre_completo = ap1 + ", " + n
-            drop_used = [nombres_col, ap_pat_col]
-
-    elif apellidos_col is not None and nombres_col is not None:
-        a = _clean_text_series(df[apellidos_col].fillna(""))
-        n = _clean_text_series(df[nombres_col].fillna(""))
-        sep_coma = a.str.contains(",", regex=False, na=False)
-        nombre_completo = a.where(sep_coma, a + ", " + n)
-        drop_used = [apellidos_col, nombres_col]
-
-    else:
-        if unico_nombre_col == nombres_col and (ap_pat_col is not None or apellidos_col is not None):
-            unico_nombre_col = None
-
-        if unico_nombre_col is not None:
-            nombre_completo = _clean_text_series(df[unico_nombre_col].fillna(""))
-            drop_used = [unico_nombre_col]
-        elif nombres_col is not None:
-            nombre_completo = _clean_text_series(df[nombres_col].fillna(""))
-            drop_used = [nombres_col]
-        elif apellidos_col is not None:
-            nombre_completo = _clean_text_series(df[apellidos_col].fillna(""))
-            drop_used = [apellidos_col]
-        else:
-            return df
-
-    nombre_completo = (
-        nombre_completo.astype(str)
-        .str.replace(r"\s+", " ", regex=True)
-        .str.strip()
-        .str.replace(r"^(.*?),\s*\1$", r"\1", regex=True)
+    header_row = pd.read_excel(
+        path,
+        sheet_name=hoja,
+        header=None,
+        skiprows=fila_header,
+        nrows=1,
+        engine="openpyxl"
     )
 
-    df["nombre_completo"] = nombre_completo
+    headers = header_row.iloc[0].tolist()
 
-    drop_candidates = set()
-    for c in drop_used:
-        if c is not None and c != dni_col and c in df.columns:
-            drop_candidates.add(c)
+    fecha_idx = []
 
-    df = df.drop(columns=list(drop_candidates), errors="ignore")
+    for i, val in enumerate(headers):
 
-    new_cols = list(df.columns)
-    if "nombre_completo" in new_cols:
-        new_cols.remove("nombre_completo")
-        new_cols.insert(0, "nombre_completo")
-    if dni_col and dni_col in new_cols:
-        new_cols.remove(dni_col)
-        new_cols.insert(0, dni_col)
+        dt = parse_excel_date_like(val)
 
-    return df[new_cols]
+        if dt is not None:
+            fecha_idx.append(i)
+
+    if not fecha_idx:
+        print(f"  [AVISO] sin fechas: {hoja}")
+        return pd.DataFrame()
+
+    last_date_idx = max(fecha_idx)
+
+    # +3 columnas de totales
+    final_idx = min(len(headers) - 1, last_date_idx + 3)
+
+    rango = f"A:{excel_col(final_idx)}"
+
+    print(f"      rango leído: {rango}")
+
+    df = pd.read_excel(
+        path,
+        sheet_name=hoja,
+        header=fila_header,
+        usecols=rango,
+        dtype=object,
+        engine="openpyxl"
+    )
+
+    # SOLO eliminar filas vacías
+    # NO eliminar columnas porque rompe índices
+    df = df.dropna(axis=0, how="all")
+
+    # normalizar unnamed
+    cols = []
+
+    for i, c in enumerate(df.columns):
+
+        if str(c).startswith("Unnamed"):
+            cols.append(f"UNNAMED_{i}")
+        else:
+            cols.append(c)
+
+    df.columns = cols
+
+    return df
 
 
 # =============================================================================
-# ANCHO -> LARGO
+# NOMBRES
 # =============================================================================
-def melt_por_fechas_preservando_totales(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Convierte columnas de fechas a filas.
-    Preserva hasta 3 columnas posteriores a la última fecha como totales.
-    """
+def detectar_y_unificar_nombres(df):
+
+    cols = list(df.columns)
+
+    norm_map = [(c, norm_key(c)) for c in cols]
+
+    def find_col(patterns):
+
+        for orig, nk in norm_map:
+
+            for p in patterns:
+
+                if re.search(p, nk):
+                    return orig
+
+        return None
+
+    dni_col = find_col([r"\bdni\b"])
+
+    nombre_col = find_col([
+        r"\bapellidos?\s*y\s*nombres?\b",
+        r"\bnombres?\s*y\s*apellidos?\b",
+        r"\bnombre\s*completo\b"
+    ])
+
+    if nombre_col:
+
+        df["nombre_completo"] = (
+            df[nombre_col]
+            .astype(str)
+            .str.replace(r"\s+", " ", regex=True)
+            .str.strip()
+        )
+
+    return df
+
+
+# =============================================================================
+# MELT
+# =============================================================================
+def melt_por_fechas_preservando_totales(df):
+
     cols = list(df.columns)
 
     fecha_idx = []
+
     for i, c in enumerate(cols):
+
         dt = parse_excel_date_like(c)
+
         if dt is not None:
             fecha_idx.append(i)
 
@@ -400,28 +332,52 @@ def melt_por_fechas_preservando_totales(df: pd.DataFrame) -> pd.DataFrame:
     first_date_pos = min(fecha_idx)
     last_date_pos = max(fecha_idx)
 
-    tail_idxs = [i for i in range(last_date_pos + 1, min(last_date_pos + 4, len(cols)))]
-    tail_names = [cols[i] for i in tail_idxs]
+    print(f"      first_date_pos: {first_date_pos}")
+    print(f"      last_date_pos: {last_date_pos}")
 
-    rename_map = {}
-    if len(tail_names) >= 1:
-        rename_map[tail_names[0]] = "ASISTENCIAS ESPERADAS"
-    if len(tail_names) >= 2:
-        rename_map[tail_names[1]] = "ASISTENCIAS REALES"
-    if len(tail_names) >= 3:
-        rename_map[tail_names[2]] = "% DE PARTICIPACIÓN"
+    # columnas fecha
+    value_vars = [cols[i] for i in fecha_idx]
 
-    if rename_map:
-        df = df.rename(columns=rename_map)
-        cols = list(df.columns)
+    # columnas posteriores
+    tail_cols = []
+
+    for i in range(last_date_pos + 1, min(last_date_pos + 4, len(cols))):
+        tail_cols.append(cols[i])
+
+    rename_tail = {}
+
+    if len(tail_cols) >= 1:
+        rename_tail[tail_cols[0]] = "ASISTENCIAS ESPERADAS"
+
+    if len(tail_cols) >= 2:
+        rename_tail[tail_cols[1]] = "ASISTENCIAS REALES"
+
+    if len(tail_cols) >= 3:
+        rename_tail[tail_cols[2]] = "% DE PARTICIPACIÓN"
+
+    df = df.rename(columns=rename_tail)
 
     tail_final = [
-        n for n in ["ASISTENCIAS ESPERADAS", "ASISTENCIAS REALES", "% DE PARTICIPACIÓN"]
-        if n in df.columns
+        x for x in [
+            "ASISTENCIAS ESPERADAS",
+            "ASISTENCIAS REALES",
+            "% DE PARTICIPACIÓN"
+        ]
+        if x in df.columns
     ]
 
-    id_vars = cols[:first_date_pos] + tail_final
-    value_vars = [cols[i] for i in fecha_idx]
+    # IMPORTANTE
+    # recalcular cols después rename
+    cols = list(df.columns)
+
+    id_vars = []
+
+    for c in cols:
+
+        if c not in value_vars:
+            id_vars.append(c)
+
+    print(f"      id_vars: {id_vars}")
 
     m = df.melt(
         id_vars=id_vars,
@@ -430,95 +386,137 @@ def melt_por_fechas_preservando_totales(df: pd.DataFrame) -> pd.DataFrame:
         value_name="asistencia"
     )
 
-    m["fecha"] = pd.to_datetime(m["fecha"], errors="coerce", dayfirst=True)
+    m["fecha"] = pd.to_datetime(
+        m["fecha"],
+        errors="coerce"
+    )
+
     return m
 
 
 # =============================================================================
-# PROCESO POR ARCHIVO
+# CODEBOOK
 # =============================================================================
-def procesar_archivo(path: Path) -> pd.DataFrame:
+def codebook(df):
+
+    resumen = pd.DataFrame({
+        "Tipo": df.dtypes.astype(str),
+        "Nulos": df.isnull().sum(),
+        "Unicos": df.nunique(dropna=True)
+    })
+
+    return resumen.reset_index().rename(
+        columns={"index": "Variable"}
+    )
+
+
+# =============================================================================
+# PROCESAMIENTO ARCHIVO
+# =============================================================================
+def procesar_archivo(path):
+
     try:
         xls = pd.ExcelFile(path)
+
     except Exception as e:
-        print(f"[ERROR] Abrir {path.name}: {e}")
+        print(f"[ERROR] {path.name}: {e}")
         return pd.DataFrame()
 
-    print(f"\n📘 Archivo: {path.name}")
-    print(f"   Hojas disponibles: {xls.sheet_names}")
+    hojas = [
+        h
+        for h in xls.sheet_names
+        if is_asistencia_sheet(h)
+    ]
 
-    hojas = [h for h in xls.sheet_names if is_asistencia_sheet(h)]
-    print(f"   Hojas de asistencia detectadas: {hojas}")
-
-    if not hojas:
-        return pd.DataFrame()
+    print(f"\n📘 {path.name}")
+    print(f"   hojas asistencia: {hojas}")
 
     frames = []
 
     for h in hojas:
-        print(f"   → Procesando hoja: {h}")
+
+        print(f"   → {h}")
+
         tutor = extraer_tutor(path, h)
 
         ancho = leer_rango_dinamico(path, h)
-        print(f"      shape ancho: {ancho.shape}")
 
         if ancho.empty:
-            print(f"      [DESCARTADA] hoja vacía o mal leída: {h}")
             continue
 
-        print(f"      columnas ancho: {list(ancho.columns)}")
+        print(f"      shape ancho: {ancho.shape}")
 
         ancho = detectar_y_unificar_nombres(ancho)
+
         largo = melt_por_fechas_preservando_totales(ancho)
+
+        if largo.empty:
+            continue
 
         print(f"      shape largo: {largo.shape}")
 
-        if largo.empty:
-            print(f"      [DESCARTADA] no se pudo hacer melt: {h}")
-            continue
-
         if "GRADO" in largo.columns:
-            print(f"      grados detectados en {h}: {largo['GRADO'].dropna().astype(str).unique().tolist()}")
+
+            print(
+                "      grados:",
+                largo["GRADO"]
+                .dropna()
+                .astype(str)
+                .unique()
+                .tolist()
+            )
 
         largo["archivo_origen"] = path.name
         largo["hoja_origen"] = h
         largo["TUTOR"] = tutor
+
         frames.append(largo)
 
-    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    if not frames:
+        return pd.DataFrame()
+
+    return pd.concat(frames, ignore_index=True)
 
 
 # =============================================================================
 # MAIN
 # =============================================================================
 def main():
+
     excels = [
         p for p in CARPETA.rglob("*")
-        if p.suffix.lower() in EXTS and not p.name.startswith("~$")
+        if p.suffix.lower() in EXTS
+        and not p.name.startswith("~$")
     ]
 
-    print(f"📂 Archivos Excel encontrados: {len(excels)}")
+    print(f"📂 excels encontrados: {len(excels)}")
+
     all_frames = []
 
     for f in excels:
-        print(f"🔹 Procesando: {f.name}")
+
+        print(f"\n🔹 {f.name}")
+
         df = procesar_archivo(f)
+
         if not df.empty:
             all_frames.append(df)
 
     if not all_frames:
-        print("⚠️ No se extrajo información de asistencia.")
+        print("⚠️ Sin datos")
         return
 
     big = pd.concat(all_frames, ignore_index=True)
 
-    # -------------------------------------------------------------------------
-    # Limpieza de DNI
-    # -------------------------------------------------------------------------
+    # =========================================================================
+    # DNI
+    # =========================================================================
     dni_cols = [c for c in big.columns if "dni" in norm_key(c)]
+
     if dni_cols:
+
         dni_col = dni_cols[0]
-        before = len(big)
+
         big[dni_col] = (
             big[dni_col]
             .astype(str)
@@ -526,51 +524,54 @@ def main():
             .replace("", np.nan)
             .replace("nan", np.nan)
         )
+
+        before = len(big)
+
         big = big[big[dni_col].notna()]
+
         after = len(big)
-        print(f"✅ Filas sin DNI eliminadas: {before - after:,} (quedan {after:,})")
-    else:
-        print("⚠️ No se encontró columna 'DNI' para filtrar (se conserva todo).")
 
-    # -------------------------------------------------------------------------
-    # Uniformización
-    # -------------------------------------------------------------------------
-    print("🔧 Uniformizando 'SEXO', 'TIPO DE ALUMNO' y creando 'CENTRO'...")
+        print(f"✅ filas sin dni eliminadas: {before - after}")
 
+    # =========================================================================
+    # SEXO
+    # =========================================================================
     if "SEXO" in big.columns:
+
         sexo_map = {
             "M": "MASCULINO",
-            "H": "MASCULINO",
-            "MASCULINO": "MASCULINO",
             "F": "FEMENINO",
-            "FEMENINO": "FEMENINO",
+            "H": "MASCULINO"
         }
-        big["SEXO"] = big["SEXO"].astype(str).str.upper().str.strip().replace("NAN", np.nan)
-        big["SEXO"] = big["SEXO"].map(sexo_map).fillna(big["SEXO"])
 
-    if "TIPO DE ALUMNO" in big.columns:
-        big["TIPO DE ALUMNO"] = (
-            big["TIPO DE ALUMNO"]
+        big["SEXO"] = (
+            big["SEXO"]
             .astype(str)
             .str.upper()
             .str.strip()
-            .replace("NAN", np.nan)
         )
 
-    if "archivo_origen" in big.columns:
-        big["CENTRO"] = (
-            big["archivo_origen"]
-            .str.replace(r"\.xlsx$|\.xlsm$|\.xls$", "", regex=True)
-            .str.replace("TALLERES_", "", regex=False)
-            .str.replace(" REGISTRO DE ASISTENCIA 2025", "", regex=False)
-            .str.strip()
+        big["SEXO"] = (
+            big["SEXO"]
+            .map(sexo_map)
+            .fillna(big["SEXO"])
         )
-    else:
-        big["CENTRO"] = np.nan
 
-    # -------------------------------------------------------------------------
-    # Orden final
-    # -------------------------------------------------------------------------
+    # =========================================================================
+    # CENTRO
+    # =========================================================================
+    big["CENTRO"] = (
+        big["archivo_origen"]
+        .astype(str)
+        .str.replace(r"\.xlsx$|\.xlsm$|\.xls$", "", regex=True)
+        .str.replace("TALLERES_", "", regex=False)
+        .str.replace(" REGISTRO DE ASISTENCIA 2025", "", regex=False)
+        .str.strip()
+    )
+
+    # =========================================================================
+    # RENAME
+    # =========================================================================
     orden_renombre = [
         ("DNI", "DNI"),
         ("nombre_completo", "NOMBRE"),
@@ -592,57 +593,97 @@ def main():
     ]
 
     for src, _ in orden_renombre:
+
         if src not in big.columns:
             big[src] = pd.NA
 
-    cols_orden = [src for src, _ in orden_renombre]
-    rename_map = {src: dst for src, dst in orden_renombre}
+    cols_orden = [x[0] for x in orden_renombre]
+
+    rename_map = {
+        x[0]: x[1]
+        for x in orden_renombre
+    }
+
     big = big[cols_orden].rename(columns=rename_map)
 
-    # -------------------------------------------------------------------------
-    # Formateo de fechas
-    # -------------------------------------------------------------------------
-    print("🔧 Formateando columnas de fecha (F_INCORPORACION, F_SALIDA, FECHA)...")
-    date_cols_to_format = ["FECHA", "F_INCORPORACION", "F_SALIDA"]
+    # =========================================================================
+    # FECHAS
+    # =========================================================================
+    for c in ["FECHA", "F_INCORPORACION", "F_SALIDA"]:
 
-    for col in date_cols_to_format:
-        if col in big.columns:
-            datetime_series = pd.to_datetime(big[col], errors="coerce", dayfirst=True)
-            string_series = datetime_series.dt.strftime("%d/%m/%Y")
-            big[col] = string_series.replace("NaT", np.nan)
+        if c in big.columns:
 
-    # -------------------------------------------------------------------------
-    # Logs finales de control
-    # -------------------------------------------------------------------------
-    if "GRADO" in big.columns:
-        print("\n📌 Grados finales:")
-        print(big["GRADO"].dropna().astype(str).str.upper().value_counts())
+            dt = pd.to_datetime(
+                big[c],
+                errors="coerce",
+                dayfirst=True
+            )
 
-    if "HOJA_ORIGEN" in big.columns and "GRADO" in big.columns:
-        print("\n📌 Conteo por hoja y grado:")
-        print(big.groupby(["HOJA_ORIGEN", "GRADO"]).size().reset_index(name="filas"))
+            big[c] = dt.dt.strftime("%d/%m/%Y")
 
-    # -------------------------------------------------------------------------
-    # Reporte de calidad
-    # -------------------------------------------------------------------------
-    print("\n📊 Generando reporte de calidad de datos (Codebook)...")
+    # =========================================================================
+    # DEBUG GRADO
+    # =========================================================================
+    print("\n📌 grados finales")
+
+    print(
+        big["GRADO"]
+        .astype(str)
+        .value_counts(dropna=False)
+    )
+
+    print("\n📌 únicos grado")
+
+    print(
+        big["GRADO"]
+        .dropna()
+        .astype(str)
+        .unique()
+    )
+
+    print("\n📌 muestra segundo")
+
+    print(
+        big[big["GRADO"] == "SEGUNDO"]
+        .head()
+    )
+
+    # =========================================================================
+    # EXPORT
+    # =========================================================================
+    CARPETA_SALIDA.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    big.to_csv(
+        SALIDA,
+        index=False,
+        encoding="utf-8-sig"
+    )
+
+    # VALIDACIÓN REAL CSV
+    print("\n🔎 validando csv exportado")
+
+    validacion = pd.read_csv(SALIDA)
+
+    print(
+        validacion["GRADO"]
+        .value_counts(dropna=False)
+    )
+
     df_calidad = codebook(big)
 
-    try:
-        CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
-        df_calidad.to_excel(SALIDA_CALIDAD, index=False, engine="openpyxl")
-        print(f"✅ Reporte de calidad guardado en:\n{SALIDA_CALIDAD}")
-    except Exception as e:
-        print(f"[ERROR] No se pudo guardar el reporte de calidad: {e}")
+    df_calidad.to_excel(
+        SALIDA_CALIDAD,
+        index=False,
+        engine="openpyxl"
+    )
 
-    # -------------------------------------------------------------------------
-    # Exportación
-    # -------------------------------------------------------------------------
-    CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
-    big.to_csv(SALIDA, index=False, encoding="utf-8-sig")
+    print(f"\n✅ csv: {SALIDA}")
+    print(f"✅ calidad: {SALIDA_CALIDAD}")
 
-    print(f"\n✅ Consolidado general guardado en:\n{SALIDA}")
-    print(f"   Filas: {len(big):,} | Columnas: {len(big.columns)}")
+    print(f"\n📊 filas: {len(big):,}")
 
 
 if __name__ == "__main__":
