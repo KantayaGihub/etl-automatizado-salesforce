@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+TRANSFORMACIÓN Y CONSOLIDACIÓN
+CALIFICACIONES ÁREA COMPETENCIA
+--------------------------------
+"""
+
 import csv
 import re
 import unicodedata
@@ -10,6 +17,14 @@ import pandas as pd
 INPUT_FILE = Path("data/raw/2025/4.calificaciones_area_competencia/comparativa_ventanilla_proyectos.xlsx")
 OUTPUT_DIR = Path("data/processed/2025/4.calificaciones_area_competencia")
 OUTPUT_FILE = OUTPUT_DIR / "BD_Promedios_Areas_LB_LS_Consolidado.csv"
+
+# ============================================================
+# NUEVO: ARCHIVO CALIDAD
+# ============================================================
+QUALITY_FILE = (
+    OUTPUT_DIR /
+    "BD_Promedios_Areas_LB_LS_Consolidado_CALIDAD.xlsx"
+)
 
 YEAR_SOURCE_COL = "PERMANENCIA"
 ANIO_PROYECTO = None
@@ -34,6 +49,107 @@ def limpiar_registros(df):
         )
         df.loc[df[col].isin(["nan", "None", "NaT"]), col] = np.nan
     return df
+
+
+# ============================================================
+# NUEVO: CODEBOOK / CALIDAD
+# ============================================================
+def codebook(df):
+
+    print("📊 Generando métricas de calidad...")
+
+    resumen = pd.DataFrame({
+        "Tipo": df.dtypes,
+        "Nulos (#)": df.isnull().sum(),
+        "Porcentaje Nulos (%)": (
+            (df.isnull().sum() / len(df)) * 100
+        ).round(2),
+        "Valores únicos (#)": df.nunique(),
+    })
+
+    print("📌 Calculando mínimos y máximos...")
+
+    resumen["Mínimo"] = df.apply(
+        lambda x: x.min(skipna=True)
+        if pd.api.types.is_numeric_dtype(x)
+        else None
+    )
+
+    resumen["Máximo"] = df.apply(
+        lambda x: x.max(skipna=True)
+        if pd.api.types.is_numeric_dtype(x)
+        else None
+    )
+
+    print("🔍 Verificando duplicados...")
+
+    resumen["Duplicados (Valores)"] = "No"
+
+    # Validación PK
+    if "DNI__c" in df.columns:
+
+        total_dups = (
+            df["DNI__c"]
+            .dropna()
+            .duplicated()
+            .sum()
+        )
+
+        if total_dups > 0:
+
+            resumen.loc[
+                "DNI__c",
+                "Duplicados (Valores)"
+            ] = f"Sí ({total_dups} duplicados)"
+
+            print(f"⚠️ DNI duplicados encontrados: {total_dups}")
+
+        else:
+
+            resumen.loc[
+                "DNI__c",
+                "Duplicados (Valores)"
+            ] = "No (PK válida)"
+
+            print("✅ DNI sin duplicados")
+
+    for col in df.columns:
+
+        if col != "DNI__c":
+
+            if df[col].duplicated().any():
+
+                resumen.loc[
+                    col,
+                    "Duplicados (Valores)"
+                ] = "Sí"
+
+    print("🧪 Generando muestra de valores únicos...")
+
+    def sample_values(x):
+
+        unicos = x.dropna().unique()
+
+        if len(unicos) > 50:
+
+            return (
+                f"({len(unicos)} valores) "
+                f"Ej: {list(unicos[:5])}"
+            )
+
+        return str(list(unicos))
+
+    resumen["Valores únicos (Muestra)"] = (
+        df.apply(sample_values)
+    )
+
+    resumen = (
+        resumen
+        .reset_index()
+        .rename(columns={"index": "Variable"})
+    )
+
+    return resumen
 
 
 def cargar_equivalencias(xls):
@@ -291,6 +407,10 @@ def main() -> None:
     bd_final = transformar_archivo(INPUT_FILE)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # ============================================================
+    # EXPORTAR CSV
+    # ============================================================
     bd_final.to_csv(
         OUTPUT_FILE,
         index=False,
@@ -300,6 +420,22 @@ def main() -> None:
 
     print("✅ TRANSFORMACIÓN COMPLETADA")
     print(f"Archivo generado: {OUTPUT_FILE.resolve()}")
+
+    # ============================================================
+    # NUEVO: GENERAR REPORTE CALIDAD
+    # ============================================================
+    print("\n📊 GENERANDO REPORTE DE CALIDAD...")
+
+    df_calidad = codebook(bd_final)
+
+    df_calidad.to_excel(
+        QUALITY_FILE,
+        index=False,
+        engine="openpyxl"
+    )
+
+    print("✅ Reporte calidad generado")
+    print(f"Archivo generado: {QUALITY_FILE.resolve()}")
 
 
 if __name__ == "__main__":
