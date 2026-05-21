@@ -70,18 +70,40 @@ def get_batch_results_safe(
 def summarize_results(results):
 
     ok = 0
-
     fail = 0
-
     errors = {}
 
     for r in results:
 
-        success = (
-            str(r.get("success", ""))
-            .lower() == "true"
-        )
+        # ========================================================
+        # Compatibilidad UploadResult / dict
+        # ========================================================
+        if isinstance(r, dict):
 
+            success = (
+                str(r.get("success", ""))
+                .lower() == "true"
+            )
+
+            err = r.get("errors")
+
+        else:
+
+            success = (
+                str(
+                    getattr(r, "success", False)
+                ).lower() == "true"
+            )
+
+            err = getattr(r, "error", None)
+
+            if err is None:
+
+                err = getattr(r, "errors", None)
+
+        # ========================================================
+        # Resultado
+        # ========================================================
         if success:
 
             ok += 1
@@ -90,7 +112,9 @@ def summarize_results(results):
 
             fail += 1
 
-            err = r.get("errors")
+            if err is None:
+
+                err = "Sin detalle"
 
             if isinstance(err, list):
 
