@@ -1,29 +1,49 @@
 import os
-import pandas as pd
-import numpy as np
-from salesforce_bulk import SalesforceBulk
+import time
 import json
 from io import BytesIO
+
+import numpy as np
+import pandas as pd
 from simple_salesforce import Salesforce
+from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
 
-print("=== Eliminación de resultados previos Salesforce ===")
 
-# ================================================================
-# 1️⃣ Variables de entorno
-# ================================================================
+print("================================================")
+print("=== ETL CARGA SALESFORCE - ASISTENCIA REGULAR ===")
+print("================================================")
+
+
+OBJECT_NAME = "Asistencias_e7__c"
+RUTA_CONSOLIDADO = "data/consolidated/asistencia_regular/asistencias_consolidado_kantaya.csv"
+DELETE_BATCH_SIZE = 10000
+INSERT_BATCH_SIZE = 1000
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
+
+print("\n=== VALIDANDO VARIABLES DE ENTORNO ===")
+
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
 SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
 
-if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
-    raise ValueError(
-        "Faltan variables de entorno. Verifica SF_USERNAME, SF_PASSWORD y SF_SECURITY_TOKEN."
-    )
+if not SF_USERNAME:
+    raise ValueError("Falta SF_USERNAME")
+if not SF_PASSWORD:
+    raise ValueError("Falta SF_PASSWORD")
+if not SF_SECURITY_TOKEN:
+    raise ValueError("Falta SF_SECURITY_TOKEN")
 
-# ================================================================
-# 1️⃣ Conexión a Salesforce
-# ================================================================
+print("Variables cargadas correctamente")
+
+
+print("\n=== CONECTANDO A SALESFORCE ===")
+
 sf = Salesforce(
     username=SF_USERNAME,
     password=SF_PASSWORD,
@@ -38,50 +58,55 @@ bulk = SalesforceBulk(
     sandbox=False
 )
 
-# ================================================================
-# 2️⃣ Eliminar registros previos del objeto personalizado
-# ================================================================
-query = "SELECT Id FROM Asistencias_e7__c"
-records = sf.query_all(query)['records']
+print("Conexion Salesforce OK")
 
-if not records:
-    print("No hay registros para eliminar.")
+
+print("\n=== ELIMINANDO REGISTROS PREVIOS ===")
+
+query = f"SELECT Id FROM {OBJECT_NAME}"
+records_delete = sf.query_all(query)["records"]
+
+if not records_delete:
+    print("No existen registros previos")
 else:
-    ids = [{"Id": r["Id"]} for r in records]
+    ids = [{"Id": r["Id"]} for r in records_delete]
+    print(f"Registros encontrados para eliminar: {len(ids):,}")
 
-    job = bulk.create_delete_job("Asistencias_e7__c", contentType='JSON')
+    delete_job = bulk.create_delete_job(OBJECT_NAME, contentType="JSON")
+    delete_batches = []
 
-    batch_size = 10000
-    for i in range(0, len(ids), batch_size):
-        batch_records = ids[i:i+batch_size]
-        json_bytes = json.dumps(batch_records).encode('utf-8')
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+    for i in range(0, len(ids), DELETE_BATCH_SIZE):
+        batch_records = ids[i:i + DELETE_BATCH_SIZE]
+        json_bytes = json.dumps(batch_records).encode("utf-8")
+        batch_id = bulk.post_batch(
+            delete_job,
+            IteratorBytesIO(iter([json_bytes]))
+        )
+        delete_batches.append(batch_id)
+        print(f"Batch delete enviado {i // DELETE_BATCH_SIZE + 1}")
 
-    bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+    bulk.close_job(delete_job)
+
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, delete_job, batch_id)
+
+    print("Eliminacion completada")
 
 
-print("=== Iniciando carga a Salesforce ===")
-
-# ================================================================
-# 3️⃣ Cargar consolidado generado por la consolidación
-# ================================================================
-print("🔎 Cargando archivo consolidado de asistencias...")
-
-ruta_consolidado = "data/consolidated/asistencia_regular/asistencias_consolidado_kantaya.csv"
+print("\n=== CARGANDO CONSOLIDADO ===")
 
 Asistencias = pd.read_csv(
-    ruta_consolidado,
+    RUTA_CONSOLIDADO,
     sep=",",
     dtype={"DNI": str}
 )
 
-print(f"✔ Archivo leído correctamente: {len(Asistencias)} filas")
+print(f"Archivo leido correctamente: {len(Asistencias)} filas")
 
 
-# ================================================================
-# 4️⃣ Convertir columnas de fecha a formato YYYY-MM-DD
-# ================================================================
+print("\n=== TRANSFORMANDO FECHAS ===")
+
 for col in ["F_INCORPORACION", "F_SALIDA", "FECHA"]:
     if col in Asistencias.columns:
         Asistencias[col] = pd.to_datetime(
@@ -91,69 +116,51 @@ for col in ["F_INCORPORACION", "F_SALIDA", "FECHA"]:
             lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else None
         )
     else:
-        print(f"⚠️ Advertencia: No se encontró columna {col} en el consolidado")
+        print(f"Advertencia: No se encontro columna {col} en el consolidado")
 
 
-# ================================================================
-# 5️⃣ Convertir métricas numéricas
-# ================================================================
+print("\n=== TRANSFORMANDO NUMERICOS ===")
+
 for col in ["A_ESPERADAS", "A_REALES", "PORC_PART"]:
     if col in Asistencias.columns:
         Asistencias[col] = pd.to_numeric(
             Asistencias[col], errors="coerce"
         )
     else:
-        print(f"⚠️ Advertencia: No se encontró columna {col} en el consolidado")
+        print(f"Advertencia: No se encontro columna {col} en el consolidado")
 
 
-# ================================================================
-# 6️⃣ Reemplazar NaN por None
-# ================================================================
+print("\n=== NORMALIZANDO NULOS ===")
+
 Asistencias = Asistencias.where(pd.notnull(Asistencias), None)
-
-
-# ================================================================
-# 7️⃣ Renombrar columnas con sufijo __c
-# ================================================================
-Asistencias.columns = [col + "__c" for col in Asistencias.columns]
-
-print("✔ Archivo preparado correctamente para Salesforce Bulk API")
-
-
-# ================================================================
-# 8️⃣ Reconexión Bulk API para inserción
-# ================================================================
-bulk = SalesforceBulk(
-    username=SF_USERNAME,
-    password=SF_PASSWORD,
-    security_token=SF_SECURITY_TOKEN,
-    sandbox=False
-)
-
-# Limpiar NaN antes de convertir
 Asistencias = Asistencias.replace({float('nan'): None, pd.NA: None, np.nan: None})
 
-# Convertir DataFrame a lista de diccionarios
+
+print("\n=== PREPARANDO COLUMNAS SALESFORCE ===")
+
+Asistencias.columns = [col + "__c" for col in Asistencias.columns]
+
+print(f"Campos finales: {len(Asistencias.columns)}")
+
+
+print("\n=== ENVIANDO A SALESFORCE BULK API ===")
+
 records = Asistencias.to_dict('records')
+print(f"Registros a insertar: {len(records):,}")
 
-# Crear job para insertar
-job = bulk.create_insert_job("Asistencias_e7__c", contentType='JSON')
+insert_job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
 
-# Subir en batches
-batch_size = 1000
-
-for i in range(0, len(records), batch_size):
-    batch_records = records[i:i+batch_size]
+for i in range(0, len(records), INSERT_BATCH_SIZE):
+    batch_records = records[i:i + INSERT_BATCH_SIZE]
     json_data = json.dumps(
         batch_records,
         ensure_ascii=False,
         allow_nan=False
     )
     batch_io = BytesIO(json_data.encode('utf-8'))
-    bulk.post_batch(job, batch_io)
-    print(f"Lote {i//batch_size + 1} enviado ({len(batch_records)} registros)")
+    bulk.post_batch(insert_job, batch_io)
+    print(f"Lote {i // INSERT_BATCH_SIZE + 1} enviado ({len(batch_records)} registros)")
 
-# Cerrar job
-bulk.close_job(job)
+bulk.close_job(insert_job)
 
-print("✅ Proceso enviado a Salesforce. Revisa resultados con bulk.get_all_batches(job)")
+print("\nProceso enviado a Salesforce correctamente")

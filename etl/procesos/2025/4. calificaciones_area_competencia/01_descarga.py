@@ -102,7 +102,7 @@ def main() -> None:
 
     downloaded_path = download_file(FILE_NAME, RAW_FILE_PATH)
 
-    print("✅ DESCARGA COMPLETADA")
+    print("DESCARGA COMPLETADA")
     print(f"Archivo guardado en: {downloaded_path.resolve()}")
 
 

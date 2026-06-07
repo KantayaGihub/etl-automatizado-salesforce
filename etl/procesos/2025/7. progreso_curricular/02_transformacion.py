@@ -40,7 +40,7 @@ def cargar_archivo() -> dict[str, pd.DataFrame]:
 
     faltantes = [h for h in HOJAS_VALIDAS if h not in sheets_dict]
     if faltantes:
-        print("⚠️ Hojas no encontradas (revisar nombres exactos):", faltantes)
+        print("Hojas no encontradas (revisar nombres exactos):", faltantes)
 
     return sheets_dict
 
@@ -75,7 +75,7 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     df_final.to_csv(OUTPUT_FILE, index=False, encoding="utf-8-sig")
 
-    print("✅ Consolidado creado:", df_final.shape)
+    print("Consolidado creado:", df_final.shape)
     print("Columnas finales:", list(df_final.columns))
     print("Archivo generado:", OUTPUT_FILE.resolve())
 

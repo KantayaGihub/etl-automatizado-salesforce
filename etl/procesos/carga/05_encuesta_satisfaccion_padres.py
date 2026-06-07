@@ -8,11 +8,18 @@ import pandas as pd
 from simple_salesforce import Salesforce
 from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
+import time
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
 
 print("=== Eliminación de resultados previos Salesforce ===")
 
 # ================================================================
-# 1️⃣ Variables de entorno
+# 1 Variables de entorno
 # ================================================================
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
@@ -24,7 +31,7 @@ if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
     )
 
 # ================================================================
-# 1️⃣ Conexión a Salesforce
+# 1 Conexión a Salesforce
 # ================================================================
 sf = Salesforce(
     username=SF_USERNAME,
@@ -43,7 +50,7 @@ bulk = SalesforceBulk(
 SF_OBJECT = "Formulario_SatisfaccionInicial6grado_e__c"
 
 # ==========================================================
-# 2️⃣ Eliminar registros previos del objeto
+# 2 Eliminar registros previos del objeto
 # ==========================================================
 query = f"SELECT Id FROM {SF_OBJECT}"
 records = sf.query_all(query)['records']
@@ -55,19 +62,26 @@ else:
 
     job = bulk.create_delete_job(SF_OBJECT, contentType='JSON')
 
+    delete_batches = []
     batch_size = 10000
     for i in range(0, len(ids), batch_size):
         batch_records = ids[i:i+batch_size]
         json_bytes = json.dumps(batch_records).encode('utf-8')
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        batch_id = bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        delete_batches.append(batch_id)
 
     bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, job, batch_id)
+
+    print(f"Eliminacion completada: {len(ids)} registros")
 
 print("=== Iniciando carga a Salesforce (Encuesta Satisfacción Padres) ===")
 
 # ==========================================================
-# 3️⃣ Cargar consolidado
+# 3 Cargar consolidado
 # ==========================================================
 ruta_consolidado = Path(
     "data/consolidated/encuesta_satisfaccion_padres/Encuesta_Padres_Deduplicado.csv"
@@ -85,16 +99,16 @@ Formulario_Satisfaccion = pd.read_csv(
     }
 )
 
-print(f"✔ Archivo leído correctamente: {len(Formulario_Satisfaccion)} filas")
+print(f"Archivo leido correctamente: {len(Formulario_Satisfaccion)} filas")
 
 # ==========================================================
-# 4️⃣ Limpiar columna de trazabilidad
+# 4 Limpiar columna de trazabilidad
 # ==========================================================
 if "ANIO_FUENTE" in Formulario_Satisfaccion.columns:
     Formulario_Satisfaccion = Formulario_Satisfaccion.drop(columns=["ANIO_FUENTE"])
 
 # ==========================================================
-# 5️⃣ Convertir fechas
+# 5 Convertir fechas
 # ==========================================================
 for col in ["Marca temporal"]:
     if col in Formulario_Satisfaccion.columns:
@@ -108,7 +122,7 @@ for col in ["Marca temporal"]:
         )
 
 # ==========================================================
-# 6️⃣ Convertir métricas numéricas
+# 6 Convertir métricas numéricas
 # ==========================================================
 for col in [
     "¿Cuántos hijos tienes en el Programa Kantaya?",
@@ -121,7 +135,7 @@ for col in [
         )
 
 # ==========================================================
-# 7️⃣ Renombrar columnas para Salesforce
+# 7 Renombrar columnas para Salesforce
 # ==========================================================
 Formulario_Satisfaccion = Formulario_Satisfaccion.rename(columns={
 
@@ -202,11 +216,8 @@ Formulario_Satisfaccion = Formulario_Satisfaccion.rename(columns={
     "ANIO_FUENTE": "ANIO_FUENTE__c"
 })
 
-print("✔ Columnas renombradas para Salesforce")
+print("Columnas renombradas para Salesforce")
 
-# ==========================================================
-# DEBUG: guardar archivo final con columnas Salesforce
-# ==========================================================
 output_debug = "data/consolidated/encuesta_satisfaccion_padres/DEBUG_para_salesforce.csv"
 
 Formulario_Satisfaccion.to_csv(
@@ -215,10 +226,10 @@ Formulario_Satisfaccion.to_csv(
     encoding="utf-8-sig"
 )
 
-print(f"📁 Archivo final guardado: {output_debug}")
+print(f"Archivo final guardado: {output_debug}")
 
 # ==========================================================
-# 8️⃣ Limpiar nulos para Salesforce
+# 8 Limpiar nulos para Salesforce
 # ==========================================================
 Formulario_Satisfaccion = Formulario_Satisfaccion.replace({
     float('nan'): None,
@@ -227,12 +238,12 @@ Formulario_Satisfaccion = Formulario_Satisfaccion.replace({
 })
 
 # ==========================================================
-# 9️⃣ Convertir a lista de diccionarios
+# 9 Convertir a lista de diccionarios
 # ==========================================================
 records = Formulario_Satisfaccion.to_dict('records')
 
 # ==========================================================
-# 🔟 Insertar en Salesforce
+# Insertar en Salesforce
 # ==========================================================
 job = bulk.create_insert_job(SF_OBJECT, contentType='JSON')
 
@@ -251,4 +262,4 @@ for i in range(0, len(records), batch_size):
 
 bulk.close_job(job)
 
-print("✅ Proceso enviado a Salesforce")
+print("Proceso enviado a Salesforce correctamente")

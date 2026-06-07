@@ -13,7 +13,7 @@ import unicodedata
 # MÓDULO DE CALIDAD
 # ============================================================
 def codebook(df, pk_col):
-    print("   [Calidad] Calculando tipos, nulos y únicos...")
+    print("[Calidad] Calculando tipos, nulos y únicos...")
     resumen = pd.DataFrame({
         "Tipo": df.dtypes,
         "Nulos (#)": df.isnull().sum(),
@@ -21,17 +21,17 @@ def codebook(df, pk_col):
         "Valores únicos (#)": df.nunique(),
     })
 
-    print("   [Calidad] Calculando min/max numéricos...")
+    print("[Calidad] Calculando min/max numéricos...")
     resumen["Mínimo"] = df.apply(lambda x: x.min(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
     resumen["Máximo"] = df.apply(lambda x: x.max(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
 
-    print(f"   [Calidad] Verificando duplicados (PK={pk_col})...")
+    print(f"[Calidad] Verificando duplicados (PK={pk_col})...")
     resumen["Duplicados (Valores)"] = "No"
 
     if pk_col in df.columns:
         total_dups = df[pk_col].dropna().duplicated().sum()
         if total_dups > 0:
-            print(f"   -> ALERTA PK ({pk_col}): {total_dups} duplicados encontrados.")
+            print(f"-> ALERTA PK ({pk_col}): {total_dups} duplicados encontrados.")
             resumen.loc[pk_col, "Duplicados (Valores)"] = f"¡SÍ! ({total_dups})"
         else:
             resumen.loc[pk_col, "Duplicados (Valores)"] = "No (PK válida)"
@@ -143,7 +143,7 @@ if __name__ == "__main__":
             df_temp = pd.read_excel(excel_path)
             df_temp.to_csv(csv_path, index=False, encoding="utf-8-sig")
 
-    print("✓ Conversión completa\n")
+    print("Conversión completa\n")
 
     # Salida PROCESSED
     output_dir = "data/processed/2025/5.encuesta_satisfaccion_padres"

@@ -193,7 +193,7 @@ def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     df_final.to_csv(OUTPUT_FILE, index=False, encoding="utf-8-sig")
 
-    print("✅ Archivo generado")
+    print("Archivo generado")
     print(OUTPUT_FILE.resolve())
 
 

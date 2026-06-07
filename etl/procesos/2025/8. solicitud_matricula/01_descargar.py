@@ -26,7 +26,7 @@ creds = Credentials.from_service_account_info(
 
 authed = AuthorizedSession(creds)
 
-print("✓ Autenticación correcta")
+print("Autenticación correcta")
 
 # Descargar archivo
 response = authed.get(export_url)
@@ -40,4 +40,4 @@ os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 with open(OUTPUT_PATH, "wb") as f:
     f.write(response.content)
 
-print(f"✓ Archivo descargado correctamente → {OUTPUT_PATH}")
+print(f"Archivo descargado correctamente → {OUTPUT_PATH}")

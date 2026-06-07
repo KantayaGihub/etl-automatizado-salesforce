@@ -46,12 +46,12 @@ for file in FILES:
     response = authed.get(export_url)
 
     if response.status_code != 200:
-        print(f"❌ Error al descargar {output_path}: {response.text}")
+        print(f"Error al descargar {output_path}: {response.text}")
         raise SystemExit(1)
 
     with open(output_path, "wb") as f:
         f.write(response.content)
 
-    print(f"✓ Archivo descargado correctamente → {output_path}")
+    print(f"Archivo descargado correctamente → {output_path}")
 
-print("\n🎉 Todos los archivos fueron descargados con éxito")
+print("\n Todos los archivos fueron descargados con éxito")

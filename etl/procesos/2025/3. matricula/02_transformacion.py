@@ -73,7 +73,7 @@ def codebook(df):
     Genera un DataFrame de resumen (codebook) sobre la calidad de datos
     del DataFrame final.
     """
-    print("   Calculando tipos, nulos y únicos...")
+    print("Calculando tipos, nulos y únicos...")
     resumen = pd.DataFrame({
         "Tipo": df.dtypes,
         "Nulos (#)": df.isnull().sum(),
@@ -81,11 +81,11 @@ def codebook(df):
         "Valores únicos (#)": df.nunique(),
     })
 
-    print("   Calculando min/max numéricos...")
+    print("Calculando min/max numéricos...")
     resumen["Mínimo"] = df.apply(lambda x: x.min(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
     resumen["Máximo"] = df.apply(lambda x: x.max(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
 
-    print("   Verificando valores duplicados (dentro de la columna)...")
+    print("Verificando valores duplicados (dentro de la columna)...")
     resumen["Duplicados (Valores)"] = "No" # Default
 
     # Identificar la columna DNI (buscando 'DNI DEL NIÑO' o 'DNI')
@@ -94,10 +94,10 @@ def codebook(df):
     if col_dni_pk:
         total_dups_dni = df[col_dni_pk].dropna().duplicated().sum()
         if total_dups_dni > 0:
-            print(f"   -> ALERTA PK ({col_dni_pk}): {total_dups_dni} duplicados encontrados.")
+            print(f"-> ALERTA PK ({col_dni_pk}): {total_dups_dni} duplicados encontrados.")
             resumen.loc[col_dni_pk, "Duplicados (Valores)"] = f"¡SÍ! ({total_dups_dni} duplicados)"
         else:
-            print(f"   -> Verificación PK ({col_dni_pk}): OK (0 duplicados).")
+            print(f"-> Verificación PK ({col_dni_pk}): OK (0 duplicados).")
             resumen.loc[col_dni_pk, "Duplicados (Valores)"] = "No (PK Válida)"
 
     # Chequear duplicados para otras columnas
@@ -105,7 +105,7 @@ def codebook(df):
         if col != col_dni_pk and df[col].duplicated().any():
             resumen.loc[col, "Duplicados (Valores)"] = "Sí"
 
-    print("   Extrayendo muestra de valores únicos (límite 50)...")
+    print("Extrayendo muestra de valores únicos (límite 50)...")
     def get_unique_values(x):
         unicos = x.dropna().unique()
         if x.nunique() > 50:
@@ -230,7 +230,7 @@ def leer_tabla_C5(archivo: Path, hoja: str) -> pd.DataFrame:
             keep_default_na=True
         )
     except Exception as e:
-        print(f"   [ERROR] No se pudo leer la hoja {hoja}: {e}")
+        print(f"[ERROR] No se pudo leer la hoja {hoja}: {e}")
         return pd.DataFrame()
 
     if df_full.shape[1] <= 2:
@@ -291,7 +291,7 @@ def filtrar_sin_dni(df: pd.DataFrame) -> pd.DataFrame:
     col_dni = _find_col(df, ['DNI DEL NIÑO', 'DNI DEL NINO', 'DNI'])
 
     if not col_dni:
-        print("⚠️ No se encontró columna 'DNI' o 'DNI DEL NIÑO'; no se aplicará filtro de filas.")
+        print("No se encontró columna 'DNI' o 'DNI DEL NIÑO'; no se aplicará filtro de filas.")
         return df
 
     # Limpiar DNI antes de filtrar (eliminar caracteres no numéricos y '0' exacto)
@@ -324,50 +324,50 @@ def eliminar_filas_con_encabezados(df: pd.DataFrame) -> pd.DataFrame:
     df_filtrado = df.loc[keep_mask].copy()
     eliminadas = len(df) - len(df_filtrado)
     if eliminadas > 0:
-        print(f"🧹 Se eliminaron {eliminadas} filas que contenían encabezados repetidos.")
+        print(f"Se eliminaron {eliminadas} filas que contenían encabezados repetidos.")
     return df_filtrado
 
 # === PROCESO PRINCIPAL =======================================================
 def main():
     """
     Función principal de consolidación:
-    1️⃣ Lee todas las hojas válidas del archivo Excel.
-    2️⃣ Limpia, normaliza y alinea sus estructuras.
-    3️⃣ Consolida toda la información en una sola tabla.
-    4️⃣ Aplica filtros finales (sin DNI, sin encabezados repetidos).
-    5️⃣ Aplica uniformización (Grado, Sexo, Centro, Condición, Fecha Registro).
-    6️⃣ Genera reporte de calidad (Codebook).
-    7️⃣ Exporta el resultado a un archivo CSV limpio.
+    1 Lee todas las hojas válidas del archivo Excel.
+    2 Limpia, normaliza y alinea sus estructuras.
+    3 Consolida toda la información en una sola tabla.
+    4 Aplica filtros finales (sin DNI, sin encabezados repetidos).
+    5 Aplica uniformización (Grado, Sexo, Centro, Condición, Fecha Registro).
+    6 Genera reporte de calidad (Codebook).
+    7 Exporta el resultado a un archivo CSV limpio.
     """
     try:
         xls = pd.ExcelFile(ARCHIVO)
         hojas_validas = [h for h in xls.sheet_names if hoja_valida(h)]
-        print(f"📘 Archivo: {ARCHIVO.name}")
-        print(f"📄 Hojas totales: {len(xls.sheet_names)} | ✅ Válidas: {len(hojas_validas)}")
+        print(f"Archivo: {ARCHIVO.name}")
+        print(f"Hojas totales: {len(xls.sheet_names)} |  Válidas: {len(hojas_validas)}")
     except Exception as e:
         print(f"[ERROR] No se pudo abrir el archivo: {e}")
         return
 
     info = []
     for hoja in hojas_validas:
-        print(f"🔹 Leyendo hoja: {hoja}")
+        print(f"Leyendo hoja: {hoja}")
         df = leer_tabla_C5(ARCHIVO, hoja)
         if df.empty:
-            print("   ⚠️ Hoja sin datos desde C5 (omitida).")
+            print("Hoja sin datos desde C5 (omitida).")
             continue
         info.append((hoja, df, df.shape[1]))
 
     if not info:
-        print("⚠️ No se encontraron tablas válidas para consolidar.")
+        print("No se encontraron tablas válidas para consolidar.")
         return
 
     # Determina la estructura base por cantidad de columnas
     distrib = Counter(n for _, _, n in info)
     ncols_base = max(distrib.items(), key=lambda x: x[1])[0]
-    print("\n📊 Distribución por número de columnas (desde C5):")
+    print("\n Distribución por número de columnas (desde C5):")
     for n, c in sorted(distrib.items()):
-        print(f"   - {n} columnas: {c} hoja(s)")
-    print(f"\n✅ Base seleccionada: {ncols_base} columnas")
+        print(f"- {n} columnas: {c} hoja(s)")
+    print(f"\n Base seleccionada: {ncols_base} columnas")
 
     grupo_base  = [(h, df) for (h, df, n) in info if n == ncols_base]
     grupo_otras = [(h, df) for (h, df, n) in info if n != ncols_base]
@@ -375,7 +375,7 @@ def main():
     # Define la hoja y columnas de referencia
     hoja_ref, df_ref = grupo_base[0]
     columnas_base = list(df_ref.columns)
-    print(f"🧭 Hoja de referencia: {hoja_ref}")
+    print(f"Hoja de referencia: {hoja_ref}")
 
     # Normaliza el grupo base por posición
     dfs_base_norm = []
@@ -415,7 +415,7 @@ def main():
     consolidado = eliminar_filas_con_encabezados(consolidado)
 
     # <--- INICIO: PASO DE UNIFORMIZACIÓN ---
-    print("\n🔧 Aplicando uniformización de datos (GRADO, SEXO, CENTRO, CONDICION ACTUAL)...")
+    print("\n Aplicando uniformización de datos (GRADO, SEXO, CENTRO, CONDICION ACTUAL)...")
 
     # Mapeo de GRADO
     if 'GRADO' in consolidado.columns:
@@ -430,7 +430,7 @@ def main():
         }
         series_limpia_grado = consolidado['GRADO'].astype(str).apply(_norm_text)
         consolidado['GRADO'] = series_limpia_grado.replace(mapa_grado)
-        print("   - 'GRADO' uniformizado.")
+        print("- 'GRADO' uniformizado.")
 
     # Mapeo de SEXO
     if 'SEXO' in consolidado.columns:
@@ -442,12 +442,12 @@ def main():
         }
         series_limpia_sexo = consolidado['SEXO'].astype(str).apply(_norm_text)
         consolidado['SEXO'] = series_limpia_sexo.map(mapa_sexo).fillna(series_limpia_sexo)
-        print("   - 'SEXO' uniformizado.")
+        print("- 'SEXO' uniformizado.")
 
     # Mapeo de CENTRO
     if 'CENTRO' in consolidado.columns:
         consolidado['CENTRO'] = consolidado['CENTRO'].astype(str).apply(_norm_text)
-        print("   - 'CENTRO' uniformizado (mayúsculas, sin tildes).")
+        print("- 'CENTRO' uniformizado (mayúsculas, sin tildes).")
 
     # Mapeo de CONDICION ACTUAL
     col_condicion = _find_col(consolidado, ["CONDICION ACTUAL", "CONDICIÓN ACTUAL"])
@@ -466,9 +466,9 @@ def main():
         consolidado.loc[mask_activo, col_condicion] = 'ACTIVO'
         consolidado.loc[mask_retirado, col_condicion] = 'INACTIVO'
 
-        print("   - 'CONDICION ACTUAL' uniformizada (Retirados -> INACTIVO).")
+        print("- 'CONDICION ACTUAL' uniformizada (Retirados -> INACTIVO).")
     else:
-        print("⚠️ No se encontró la columna 'CONDICIÓN ACTUAL'.")
+        print("No se encontró la columna 'CONDICIÓN ACTUAL'.")
 
     # --- NUEVO: Transformación de FECHA DE REGISTRO ---
     col_fecha_reg = _find_col(consolidado, ["FECHA DE REGISTRO", "FECHA REGISTRO"])
@@ -483,22 +483,22 @@ def main():
         # 3. Reemplazar 'NaT' (que es un string) por un nulo real
         consolidado[col_fecha_reg] = string_series.replace('NaT', np.nan)
 
-        print(f"   - '{col_fecha_reg}' transformada y formateada (dd/mm/YYYY).")
+        print(f"- '{col_fecha_reg}' transformada y formateada (dd/mm/YYYY).")
     else:
-        print("⚠️ No se encontró la columna 'FECHA DE REGISTRO'.")
+        print("No se encontró la columna 'FECHA DE REGISTRO'.")
     # --- FIN NUEVO ---
 
     # <--- FIN: PASO DE UNIFORMIZACIÓN ---
 
     # <--- INICIO: PASO DE REPORTE DE CALIDAD ---
-    print("\n📊 Generando reporte de calidad de datos (Codebook)...")
+    print("\n Generando reporte de calidad de datos (Codebook)...")
 
     df_calidad = codebook(consolidado)
 
     try:
         CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
         df_calidad.to_excel(SALIDA_CALIDAD, index=False, engine="openpyxl")
-        print(f"✅ Reporte de calidad guardado en:\n{SALIDA_CALIDAD}")
+        print(f"Reporte de calidad guardado en:\n{SALIDA_CALIDAD}")
     except Exception as e:
         print(f"[ERROR] No se pudo guardar el reporte de calidad: {e}")
     # <--- FIN: PASO DE REPORTE DE CALIDAD ---
@@ -507,10 +507,10 @@ def main():
     CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
     consolidado.to_csv(SALIDA, index=False, encoding="utf-8-sig", sep=',')
 
-    print(f"\n✅ Consolidado final guardado en:\n{SALIDA}")
-    print(f"   Filas totales: {len(consolidado):,}")
-    print(f"   Columnas: {len(consolidado.columns)}")
-    print(f"   Columnas base: {len(columnas_base)} | Extras añadidas: {len(extras_ordenadas)}")
+    print(f"\n Consolidado final guardado en:\n{SALIDA}")
+    print(f"Filas totales: {len(consolidado):,}")
+    print(f"Columnas: {len(consolidado.columns)}")
+    print(f"Columnas base: {len(columnas_base)} | Extras añadidas: {len(extras_ordenadas)}")
 
 # === EJECUCIÓN ===============================================================
 if __name__ == "__main__":

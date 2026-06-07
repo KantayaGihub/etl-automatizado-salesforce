@@ -14,7 +14,7 @@ def codebook(df, pk_col='Número de Documento'):
     Genera un DataFrame de resumen (codebook) sobre la calidad de datos
     del DataFrame final.
     """
-    print("   [Calidad] Calculando tipos, nulos y únicos...")
+    print("[Calidad] Calculando tipos, nulos y únicos...")
     resumen = pd.DataFrame({
         "Tipo": df.dtypes,
         "Nulos (#)": df.isnull().sum(),
@@ -22,21 +22,21 @@ def codebook(df, pk_col='Número de Documento'):
         "Valores únicos (#)": df.nunique(),
     })
 
-    print("   [Calidad] Calculando min/max numéricos...")
+    print("[Calidad] Calculando min/max numéricos...")
     resumen["Mínimo"] = df.apply(lambda x: x.min(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
     resumen["Máximo"] = df.apply(lambda x: x.max(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
 
-    print(f"   [Calidad] Verificando duplicados (PK={pk_col})...")
+    print(f"[Calidad] Verificando duplicados (PK={pk_col})...")
     resumen["Duplicados (Valores)"] = "No" # Default
 
     if pk_col in df.columns:
         # Asegurarse de que el DNI esté limpio (sin nulos) para la verificación de PK
         total_dups_dni = df[pk_col].dropna().duplicated().sum()
         if total_dups_dni > 0:
-            print(f"   -> ALERTA PK ({pk_col}): {total_dups_dni} duplicados encontrados.")
+            print(f"-> ALERTA PK ({pk_col}): {total_dups_dni} duplicados encontrados.")
             resumen.loc[pk_col, "Duplicados (Valores)"] = f"¡SÍ! ({total_dups_dni} duplicados)"
         else:
-            print(f"   -> Verificación PK ({pk_col}): OK (0 duplicados).")
+            print(f"-> Verificación PK ({pk_col}): OK (0 duplicados).")
             resumen.loc[pk_col, "Duplicados (Valores)"] = "No (PK Válida)"
 
     # Chequear duplicados para otras columnas
@@ -44,7 +44,7 @@ def codebook(df, pk_col='Número de Documento'):
         if col != pk_col and df[col].duplicated().any():
             resumen.loc[col, "Duplicados (Valores)"] = "Sí"
 
-    print("   [Calidad] Extrayendo muestra de valores únicos (límite 50)...")
+    print("[Calidad] Extrayendo muestra de valores únicos (límite 50)...")
     def get_unique_values(x):
         unicos = x.dropna().unique()
         if x.nunique() > 50:
@@ -249,7 +249,7 @@ def limpiar_y_deduplicar_datos(file_path, output_filename_csv, output_filename_e
         print(f"Error inesperado al guardar el archivo: {e}")
 
     # --- NUEVO PASO 8: Guardado del Reporte de Calidad (Excel) ---
-    print("\n📊 Generando reporte de calidad de datos (Codebook)...")
+    print("\n Generando reporte de calidad de datos (Codebook)...")
 
     # Llamar a la función codebook con el DataFrame FINAL y LIMPIO
     # Usamos 'Número de Documento' como la PK para el reporte
@@ -258,7 +258,7 @@ def limpiar_y_deduplicar_datos(file_path, output_filename_csv, output_filename_e
     # Guardar el reporte de calidad en un Excel
     try:
         df_calidad.to_excel(output_filename_excel, index=False, engine="openpyxl")
-        print(f"✅ Reporte de calidad guardado en:\n{output_filename_excel}")
+        print(f"Reporte de calidad guardado en:\n{output_filename_excel}")
     except PermissionError:
         print(f"\n--- ERROR AL GUARDAR (Excel Calidad) ---")
         print(f"Permiso denegado al intentar guardar en: {output_filename_excel}")
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     output_path_csv   = os.path.join(output_folder, "Sol_Mtr_Deduplicado.csv")
     output_path_excel = os.path.join(output_folder, "Sol_Mtr_Deduplicado_CALIDAD.xlsx")
 
-    print(f"🚀 Ejecutando limpieza sobre: {input_path}")
+    print(f"Ejecutando limpieza sobre: {input_path}")
     
     try:
         limpiar_y_deduplicar_datos(
@@ -291,12 +291,12 @@ if __name__ == "__main__":
             output_filename_excel=output_path_excel
         )
 
-        print("\n✅ ¡Proceso finalizado con éxito!")
-        print(f"📂 CSV limpio guardado en: {output_path_csv}")
-        print(f"📊 Reporte de calidad guardado en: {output_path_excel}")
+        print("\n ¡Proceso finalizado con éxito!")
+        print(f"CSV limpio guardado en: {output_path_csv}")
+        print(f"Reporte de calidad guardado en: {output_path_excel}")
 
     except Exception as e:
-        print(f"\n❌ Error durante la ejecución lógica: {e}")
+        print(f"\n Error durante la ejecución lógica: {e}")
 
 
 

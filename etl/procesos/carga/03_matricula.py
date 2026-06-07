@@ -1,29 +1,50 @@
 import os
-import pandas as pd
-import numpy as np
-from salesforce_bulk import SalesforceBulk
+import time
 import json
 from io import BytesIO
+
+import numpy as np
+import pandas as pd
 from simple_salesforce import Salesforce
+from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
 
-print("=== Eliminación de resultados previos Salesforce ===")
 
-# ================================================================
-# 1️⃣ Variables de entorno
-# ================================================================
+print("================================================")
+print("=== ETL CARGA SALESFORCE - MATRICULA ===")
+print("================================================")
+
+
+OBJECT_NAME = "Matricula_e__c"
+INPUT_PATH = "data/consolidated/matricula/consolidado_matricula_afterschool.csv"
+OUTPUT_FINAL = "data/consolidated/matricula/matricula_final_para_salesforce.csv"
+DELETE_BATCH_SIZE = 10000
+INSERT_BATCH_SIZE = 1000
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
+
+print("\n=== VALIDANDO VARIABLES DE ENTORNO ===")
+
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
 SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
 
-if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
-    raise ValueError(
-        "Faltan variables de entorno. Verifica SF_USERNAME, SF_PASSWORD y SF_SECURITY_TOKEN."
-    )
+if not SF_USERNAME:
+    raise ValueError("Falta SF_USERNAME")
+if not SF_PASSWORD:
+    raise ValueError("Falta SF_PASSWORD")
+if not SF_SECURITY_TOKEN:
+    raise ValueError("Falta SF_SECURITY_TOKEN")
 
-# ================================================================
-# 1️⃣ Conexión a Salesforce
-# ================================================================
+print("Variables cargadas correctamente")
+
+
+print("\n=== CONECTANDO A SALESFORCE ===")
+
 sf = Salesforce(
     username=SF_USERNAME,
     password=SF_PASSWORD,
@@ -38,49 +59,57 @@ bulk = SalesforceBulk(
     sandbox=False
 )
 
+print("Conexion Salesforce OK")
 
-# ==========================================================
-# 2️⃣ Eliminar registros previos del objeto personalizado
-# ==========================================================
-query = "SELECT Id FROM Matricula_e__c"
-records = sf.query_all(query)['records']
 
-if not records:
-    print("No hay registros para eliminar.")
+print("\n=== ELIMINANDO REGISTROS PREVIOS ===")
+
+query = f"SELECT Id FROM {OBJECT_NAME}"
+records_delete = sf.query_all(query)["records"]
+
+if not records_delete:
+    print("No existen registros previos")
 else:
-    ids = [{"Id": r["Id"]} for r in records]
+    ids = [{"Id": r["Id"]} for r in records_delete]
+    print(f"Registros encontrados para eliminar: {len(ids):,}")
 
-    job = bulk.create_delete_job("Matricula_e__c", contentType='JSON')
+    delete_job = bulk.create_delete_job(OBJECT_NAME, contentType="JSON")
+    delete_batches = []
 
-    batch_size = 10000
-    for i in range(0, len(ids), batch_size):
-        batch_records = ids[i:i+batch_size]
-        json_bytes = json.dumps(batch_records).encode('utf-8')
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+    for i in range(0, len(ids), DELETE_BATCH_SIZE):
+        batch_records = ids[i:i + DELETE_BATCH_SIZE]
+        json_bytes = json.dumps(batch_records).encode("utf-8")
+        batch_id = bulk.post_batch(
+            delete_job,
+            IteratorBytesIO(iter([json_bytes]))
+        )
+        delete_batches.append(batch_id)
+        print(f"Batch delete enviado {i // DELETE_BATCH_SIZE + 1}")
 
-    bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+    bulk.close_job(delete_job)
 
-print("=== Iniciando carga a Salesforce (Matrícula) ===")
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, delete_job, batch_id)
 
-# ==========================================================
-# 3️⃣ Cargar consolidado generado por la consolidación
-# ==========================================================
-input_path = "data/consolidated/matricula/consolidado_matricula_afterschool.csv"
+    print("Eliminacion completada")
 
-print(f"📥 Cargando archivo: {input_path}")
+
+print("\n=== CARGANDO CONSOLIDADO ===")
 
 Matricula = pd.read_csv(
-    input_path,
+    INPUT_PATH,
     sep=",",
     dtype={"DNI": str, "DNI DEL NIÑO": str, "DNI DEL NINO": str}
 )
 
-print(f"✔ Archivo leído correctamente: {len(Matricula)} filas")
+print(f"Archivo leido correctamente: {len(Matricula)} filas")
 
-# ==========================================================
-# 4️⃣ Eliminación temporal de columnas
-# ==========================================================
+
+# ================================================================
+# LIMPIEZA Y TRANSFORMACION
+# ================================================================
+
 cols_drop = [
     'N.1', 'DNI.1', 'APELLIDOS Y NOMBRES.1', 'GRADO.1', 'SEXO.1',
     'CENTRO.1', 'PERIODO DE INGRESO.1', 'NUMERO TELEFONICO.1',
@@ -96,15 +125,9 @@ cols_drop = [
 
 Matricula = Matricula.drop(columns=cols_drop, errors='ignore')
 
-# ==========================================================
-# 5️⃣ Si existe columna de trazabilidad, quitarla antes de SF
-# ==========================================================
 if "ANIO_FUENTE" in Matricula.columns:
     Matricula = Matricula.drop(columns=["ANIO_FUENTE"])
 
-# ==========================================================
-# 6️⃣ Conversión de campos numéricos y fechas
-# ==========================================================
 if "N DE DOC. PRESENTADOS" in Matricula.columns:
     Matricula["N DE DOC. PRESENTADOS"] = pd.to_numeric(
         Matricula["N DE DOC. PRESENTADOS"], errors="coerce"
@@ -117,19 +140,10 @@ for col in ["FECHA DE REGISTRO"]:
             lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else None
         )
 
-# ==========================================================
-# 7️⃣ Reemplazar nulos
-# ==========================================================
 Matricula = Matricula.where(pd.notnull(Matricula), None)
 
-# ==========================================================
-# 8️⃣ Agregar sufijo __c
-# ==========================================================
 Matricula.columns = [col + "__c" for col in Matricula.columns]
 
-# ==========================================================
-# 9️⃣ Renombrar columnas para que coincidan con Salesforce
-# ==========================================================
 Matricula = Matricula.rename(columns={
     "APELLIDOS Y NOMBRES__c": "APELLIDOS_Y_NOMBRES__c",
     "BOLETA DE NOTAS__c": "BOLETA_DE_NOTAS__c",
@@ -153,54 +167,32 @@ Matricula = Matricula.rename(columns={
     "ANO DE INGRESO__c": "ANO_DE_INGRESO__c"
 })
 
-print("✔ Archivo preparado correctamente para Salesforce Bulk API")
+print("Archivo preparado correctamente para Salesforce Bulk API")
 
-# ==========================================================
-# 🔟 Reconexión Bulk API
-# ==========================================================
-bulk = SalesforceBulk(
-    username=SF_USERNAME,
-    password=SF_PASSWORD,
-    security_token=SF_SECURITY_TOKEN,
-    sandbox=False
-)
+
+print("\n=== ENVIANDO A SALESFORCE BULK API ===")
 
 Matricula = Matricula.replace({float('nan'): None, pd.NA: None, np.nan: None})
 
-# Convertir DataFrame a lista de diccionarios
 records = Matricula.to_dict('records')
+print(f"Registros a insertar: {len(records):,}")
 
-# Crear el job para insertar en el objeto personalizado
-job = bulk.create_insert_job("Matricula_e__c", contentType='JSON')
+insert_job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
 
-# Subir registros en batches de 1,000
-batch_size = 1000
-
-for i in range(0, len(records), batch_size):
-    batch_records = records[i:i+batch_size]
+for i in range(0, len(records), INSERT_BATCH_SIZE):
+    batch_records = records[i:i + INSERT_BATCH_SIZE]
     json_data = json.dumps(
         batch_records,
         ensure_ascii=False,
         allow_nan=False
     )
     batch_io = BytesIO(json_data.encode('utf-8'))
-    bulk.post_batch(job, batch_io)
-    print(f"Lote {i//batch_size + 1} enviado ({len(batch_records)} registros)")
+    bulk.post_batch(insert_job, batch_io)
+    print(f"Lote {i // INSERT_BATCH_SIZE + 1} enviado ({len(batch_records)} registros)")
 
-# Cerrar job
-bulk.close_job(job)
+bulk.close_job(insert_job)
 
-print("✅ Proceso enviado a Salesforce. Revisa resultados con bulk.get_all_batches(job)")
+Matricula.to_csv(OUTPUT_FINAL, index=False, encoding="utf-8-sig")
+print(f"Archivo final guardado en: {OUTPUT_FINAL}")
 
-# ==========================================================
-# 1️⃣1️⃣ Guardar archivo final para revisión
-# ==========================================================
-output_final = "data/consolidated/matricula/matricula_final_para_salesforce.csv"
-
-Matricula.to_csv(
-    output_final,
-    index=False,
-    encoding="utf-8-sig"
-)
-
-print(f"📁 Archivo final para Salesforce guardado en: {output_final}")
+print("\nProceso enviado a Salesforce correctamente")

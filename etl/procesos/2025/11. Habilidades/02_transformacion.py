@@ -27,7 +27,7 @@ SHEETS_MAP = {
 # ============================================================
 def codebook(df, pk_col=None):
 
-    print("📊 Generando métricas de calidad...")
+    print("Generando métricas de calidad...")
 
     resumen = pd.DataFrame({
 
@@ -43,7 +43,7 @@ def codebook(df, pk_col=None):
 
     })
 
-    print("📌 Calculando mínimos y máximos...")
+    print("Calculando mínimos y máximos...")
 
     resumen["Mínimo"] = df.apply(
 
@@ -69,7 +69,7 @@ def codebook(df, pk_col=None):
 
     )
 
-    print("🔍 Verificando duplicados...")
+    print("Verificando duplicados...")
 
     resumen["Duplicados (Valores)"] = "No"
 
@@ -92,7 +92,7 @@ def codebook(df, pk_col=None):
             ] = f"Sí ({total_dups} duplicados)"
 
             print(
-                f"⚠️ Duplicados encontrados "
+                f"Duplicados encontrados "
                 f"en PK ({pk_col}): {total_dups}"
             )
 
@@ -104,7 +104,7 @@ def codebook(df, pk_col=None):
             ] = "No (PK válida)"
 
             print(
-                f"✅ PK válida "
+                f"PK válida "
                 f"({pk_col})"
             )
 
@@ -119,7 +119,7 @@ def codebook(df, pk_col=None):
                     "Duplicados (Valores)"
                 ] = "Sí"
 
-    print("🧪 Generando muestra de valores únicos...")
+    print("Generando muestra de valores únicos...")
 
     resumen["Valores únicos (Muestra)"] = df.apply(
 
@@ -378,7 +378,7 @@ def main():
 
     )
 
-    print("✅ Archivo generado")
+    print("Archivo generado")
 
     print(df_final.shape)
 
@@ -387,7 +387,7 @@ def main():
     # ========================================================
     # NUEVO: GENERAR CODEBOOK
     # ========================================================
-    print("\n📊 GENERANDO REPORTE DE CALIDAD...")
+    print("\n GENERANDO REPORTE DE CALIDAD...")
 
     df_code = codebook(
         df_final,
@@ -404,7 +404,7 @@ def main():
 
     )
 
-    print("✅ Reporte calidad generado")
+    print("Reporte calidad generado")
 
     print(QUALITY_FILE.resolve())
 
