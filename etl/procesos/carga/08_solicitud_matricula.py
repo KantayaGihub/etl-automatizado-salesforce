@@ -182,7 +182,8 @@ mapeo = {
     "¿Cuántos?.1": "Cuntos1__c",
     "EDAD": "EDAD__c",
     "Parentesco": "Parentesco__c",
-    "ANIO_FUENTE": "ANIO_FUENTE__c"
+    "ANIO_FUENTE": "ANIO_FUENTE__c",
+    "Distrito.1": "Distrito_1__c",
 }
 
 df = df.rename(columns=mapeo)
