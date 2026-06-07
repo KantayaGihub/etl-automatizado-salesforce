@@ -56,7 +56,7 @@ def limpiar_registros(df):
 # ============================================================
 def codebook(df):
 
-    print("📊 Generando métricas de calidad...")
+    print("Generando métricas de calidad...")
 
     resumen = pd.DataFrame({
         "Tipo": df.dtypes,
@@ -67,7 +67,7 @@ def codebook(df):
         "Valores únicos (#)": df.nunique(),
     })
 
-    print("📌 Calculando mínimos y máximos...")
+    print("Calculando mínimos y máximos...")
 
     resumen["Mínimo"] = df.apply(
         lambda x: x.min(skipna=True)
@@ -81,7 +81,7 @@ def codebook(df):
         else None
     )
 
-    print("🔍 Verificando duplicados...")
+    print("Verificando duplicados...")
 
     resumen["Duplicados (Valores)"] = "No"
 
@@ -102,7 +102,7 @@ def codebook(df):
                 "Duplicados (Valores)"
             ] = f"Sí ({total_dups} duplicados)"
 
-            print(f"⚠️ DNI duplicados encontrados: {total_dups}")
+            print(f"DNI duplicados encontrados: {total_dups}")
 
         else:
 
@@ -111,7 +111,7 @@ def codebook(df):
                 "Duplicados (Valores)"
             ] = "No (PK válida)"
 
-            print("✅ DNI sin duplicados")
+            print("DNI sin duplicados")
 
     for col in df.columns:
 
@@ -124,7 +124,7 @@ def codebook(df):
                     "Duplicados (Valores)"
                 ] = "Sí"
 
-    print("🧪 Generando muestra de valores únicos...")
+    print("Generando muestra de valores únicos...")
 
     def sample_values(x):
 
@@ -418,13 +418,13 @@ def main() -> None:
         quoting=csv.QUOTE_ALL
     )
 
-    print("✅ TRANSFORMACIÓN COMPLETADA")
+    print("TRANSFORMACIÓN COMPLETADA")
     print(f"Archivo generado: {OUTPUT_FILE.resolve()}")
 
     # ============================================================
     # NUEVO: GENERAR REPORTE CALIDAD
     # ============================================================
-    print("\n📊 GENERANDO REPORTE DE CALIDAD...")
+    print("\n GENERANDO REPORTE DE CALIDAD...")
 
     df_calidad = codebook(bd_final)
 
@@ -434,7 +434,7 @@ def main() -> None:
         engine="openpyxl"
     )
 
-    print("✅ Reporte calidad generado")
+    print("Reporte calidad generado")
     print(f"Archivo generado: {QUALITY_FILE.resolve()}")
 
 

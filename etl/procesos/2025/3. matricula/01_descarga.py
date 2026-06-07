@@ -21,13 +21,13 @@ creds = Credentials.from_service_account_info(
 
 authed = AuthorizedSession(creds)
 
-print("✓ Autenticación correcta")
+print("Autenticación correcta")
 
 # === DESCARGA ===
 response = authed.get(export_url)
 
 if response.status_code != 200:
-    print("❌ Error al descargar el archivo:", response.text)
+    print("Error al descargar el archivo:", response.text)
     raise SystemExit(1)
 
 os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
@@ -35,5 +35,5 @@ os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
 with open(OUTPUT_PATH, "wb") as f:
     f.write(response.content)
 
-print(f"✓ Archivo descargado correctamente → {OUTPUT_PATH}")
+print(f"Archivo descargado correctamente → {OUTPUT_PATH}")
 

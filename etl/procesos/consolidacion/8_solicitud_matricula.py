@@ -15,10 +15,10 @@ ARCHIVO_SALIDA = CARPETA_SALIDA / "Sol_Mtr_Deduplicado.csv"
 
 def leer_csv_seguro(ruta: Path, anio: str) -> pd.DataFrame:
     if not ruta.exists():
-        print(f"⚠️ No se encontró archivo para {anio}: {ruta}")
+        print(f"No se encontró archivo para {anio}: {ruta}")
         return pd.DataFrame()
 
-    print(f"📂 Leyendo {anio}: {ruta}")
+    print(f"Leyendo {anio}: {ruta}")
     df = pd.read_csv(
         ruta,
         dtype={
@@ -28,7 +28,7 @@ def leer_csv_seguro(ruta: Path, anio: str) -> pd.DataFrame:
         }
     )
     df["ANIO_FUENTE"] = anio
-    print(f"   -> {len(df)} filas")
+    print(f"-> {len(df)} filas")
     return df
 
 
@@ -67,13 +67,13 @@ def main():
 
     consolidado = pd.concat(dfs, ignore_index=True)
 
-    print(f"📊 Total concatenado: {len(consolidado)} filas")
+    print(f"Total concatenado: {len(consolidado)} filas")
 
     CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
     consolidado.to_csv(ARCHIVO_SALIDA, index=False, encoding="utf-8-sig")
 
-    print(f"✅ Consolidado guardado en: {ARCHIVO_SALIDA}")
-    print(f"📦 Total final: {len(consolidado)} filas")
+    print(f"Consolidado guardado en: {ARCHIVO_SALIDA}")
+    print(f"Total final: {len(consolidado)} filas")
 
 
 if __name__ == "__main__":

@@ -30,9 +30,9 @@ SALIDA_CALIDAD = (
 MAX_FILAS_BUSQUEDA_HEADER = 20
 
 if not CARPETA.exists():
-    raise Exception(f"❌ No existe carpeta: {CARPETA}")
+    raise Exception(f"No existe carpeta: {CARPETA}")
 
-print(f"📂 Procesando desde: {CARPETA}")
+print(f"Procesando desde: {CARPETA}")
 
 
 # =============================================================================
@@ -230,11 +230,11 @@ def leer_rango_dinamico(path, hoja):
 
     if fila_header is None:
 
-        print(f"  [AVISO] header no detectado: {hoja}")
+        print(f"[AVISO] header no detectado: {hoja}")
 
         return pd.DataFrame()
 
-    print(f"      fila header: {fila_header}")
+    print(f"fila header: {fila_header}")
 
     header_row = pd.read_excel(
         path,
@@ -258,7 +258,7 @@ def leer_rango_dinamico(path, hoja):
 
     if not fecha_idx:
 
-        print(f"  [AVISO] sin fechas: {hoja}")
+        print(f"[AVISO] sin fechas: {hoja}")
 
         return pd.DataFrame()
 
@@ -272,7 +272,7 @@ def leer_rango_dinamico(path, hoja):
 
     rango = f"A:{excel_col(final_idx)}"
 
-    print(f"      rango leído: {rango}")
+    print(f"rango leído: {rango}")
 
     df = pd.read_excel(
         path,
@@ -364,8 +364,8 @@ def melt_por_fechas_preservando_totales(df):
     first_date_pos = min(fecha_idx)
     last_date_pos = max(fecha_idx)
 
-    print(f"      first_date_pos: {first_date_pos}")
-    print(f"      last_date_pos: {last_date_pos}")
+    print(f"first_date_pos: {first_date_pos}")
+    print(f"last_date_pos: {last_date_pos}")
 
     # columnas fecha
     value_vars = [cols[i] for i in fecha_idx]
@@ -407,7 +407,7 @@ def melt_por_fechas_preservando_totales(df):
     # ESTE ERA EL BUG
     id_vars = cols[:first_date_pos] + tail_final
 
-    print(f"      id_vars: {id_vars}")
+    print(f"id_vars: {id_vars}")
 
     m = df.melt(
         id_vars=id_vars,
@@ -460,14 +460,14 @@ def procesar_archivo(path):
         if is_asistencia_sheet(h)
     ]
 
-    print(f"\n📘 {path.name}")
-    print(f"   hojas asistencia: {hojas}")
+    print(f"\n {path.name}")
+    print(f"hojas asistencia: {hojas}")
 
     frames = []
 
     for h in hojas:
 
-        print(f"   → {h}")
+        print(f"→ {h}")
 
         tutor = extraer_tutor(path, h)
 
@@ -476,7 +476,7 @@ def procesar_archivo(path):
         if ancho.empty:
             continue
 
-        print(f"      shape ancho: {ancho.shape}")
+        print(f"shape ancho: {ancho.shape}")
 
         ancho = detectar_y_unificar_nombres(ancho)
 
@@ -485,12 +485,12 @@ def procesar_archivo(path):
         if largo.empty:
             continue
 
-        print(f"      shape largo: {largo.shape}")
+        print(f"shape largo: {largo.shape}")
 
         if "GRADO" in largo.columns:
 
             print(
-                "      grados:",
+                "grados:",
                 largo["GRADO"]
                 .dropna()
                 .astype(str)
@@ -521,13 +521,13 @@ def main():
         and not p.name.startswith("~$")
     ]
 
-    print(f"📂 excels encontrados: {len(excels)}")
+    print(f"excels encontrados: {len(excels)}")
 
     all_frames = []
 
     for f in excels:
 
-        print(f"\n🔹 {f.name}")
+        print(f"\n {f.name}")
 
         df = procesar_archivo(f)
 
@@ -536,7 +536,7 @@ def main():
 
     if not all_frames:
 
-        print("⚠️ Sin datos")
+        print("Sin datos")
 
         return
 
@@ -568,7 +568,7 @@ def main():
 
         after = len(big)
 
-        print(f"✅ filas sin dni eliminadas: {before - after}")
+        print(f"filas sin dni eliminadas: {before - after}")
 
     # =========================================================================
     # SEXO
@@ -672,7 +672,7 @@ def main():
     # =========================================================================
     # DEBUG
     # =========================================================================
-    print("\n📌 grados finales")
+    print("\n grados finales")
 
     print(
         big["GRADO"]
@@ -695,7 +695,7 @@ def main():
     )
 
     # validación real
-    print("\n🔎 validando csv exportado")
+    print("\n validando csv exportado")
 
     validacion = pd.read_csv(SALIDA)
 
@@ -713,10 +713,10 @@ def main():
         engine="openpyxl"
     )
 
-    print(f"\n✅ csv: {SALIDA}")
-    print(f"✅ calidad: {SALIDA_CALIDAD}")
+    print(f"\n csv: {SALIDA}")
+    print(f"calidad: {SALIDA_CALIDAD}")
 
-    print(f"\n📊 filas: {len(big):,}")
+    print(f"\n filas: {len(big):,}")
 
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ def get_batch_results_safe(bulk_client, job_id, batch_id):
 
     except Exception as e:
 
-        print(f"⚠️ Error obteniendo resultados batch: {e}")
+        print(f"Error obteniendo resultados batch: {e}")
 
         return []
 
@@ -106,15 +106,15 @@ SF_PASSWORD = os.getenv("SF_PASSWORD")
 SF_SECURITY_TOKEN = os.getenv("SF_SECURITY_TOKEN")
 
 if not SF_USERNAME:
-    raise ValueError("❌ Falta SF_USERNAME")
+    raise ValueError("Falta SF_USERNAME")
 
 if not SF_PASSWORD:
-    raise ValueError("❌ Falta SF_PASSWORD")
+    raise ValueError("Falta SF_PASSWORD")
 
 if not SF_SECURITY_TOKEN:
-    raise ValueError("❌ Falta SF_SECURITY_TOKEN")
+    raise ValueError("Falta SF_SECURITY_TOKEN")
 
-print("✔ Variables cargadas correctamente")
+print("Variables cargadas correctamente")
 
 
 # ================================================================
@@ -136,7 +136,7 @@ bulk = SalesforceBulk(
     sandbox=False
 )
 
-print("✔ Conexión Salesforce OK")
+print("Conexión Salesforce OK")
 
 
 # ================================================================
@@ -150,13 +150,13 @@ records_delete = sf.query_all(query)["records"]
 
 if not records_delete:
 
-    print("✔ No existen registros previos")
+    print("No existen registros previos")
 
 else:
 
     ids = [{"Id": r["Id"]} for r in records_delete]
 
-    print(f"ℹ️ Registros encontrados para eliminar: {len(ids):,}")
+    print(f"Registros encontrados para eliminar: {len(ids):,}")
 
     delete_job = bulk.create_delete_job(OBJECT_NAME, contentType="JSON")
 
@@ -175,7 +175,7 @@ else:
 
         delete_batches.append(batch_id)
 
-        print(f"🗑️ Batch delete enviado {i // DELETE_BATCH_SIZE + 1}")
+        print(f"Batch delete enviado {i // DELETE_BATCH_SIZE + 1}")
 
     bulk.close_job(delete_job)
 
@@ -183,13 +183,13 @@ else:
     # Esperar a que TODOS los batches de delete terminen
     # antes de continuar con el insert
     # ----------------------------------------------------------------
-    print("⏳ Esperando finalización de deletes...")
+    print("Esperando finalización de deletes...")
 
     for batch_id in delete_batches:
 
         wait_for_batch(bulk, delete_job, batch_id)
 
-    print("✔ Eliminación completada")
+    print("Eliminación completada")
 
 
 # ================================================================
@@ -203,9 +203,9 @@ Asistencias = pd.read_csv(
     dtype={"DNI": str}
 )
 
-print("✔ CSV cargado correctamente")
-print(f"ℹ️ Filas: {len(Asistencias):,}")
-print(f"ℹ️ Columnas: {len(Asistencias.columns)}")
+print("CSV cargado correctamente")
+print(f"Filas: {len(Asistencias):,}")
+print(f"Columnas: {len(Asistencias.columns)}")
 
 
 # ================================================================
@@ -218,14 +218,14 @@ dup_cols = [c for c in ["DNI", "FECHA"] if c in Asistencias.columns]
 if dup_cols:
 
     dups = Asistencias.duplicated(subset=dup_cols).sum()
-    print(f"ℹ️ Duplicados {dup_cols}: {dups:,}")
+    print(f"Duplicados {dup_cols}: {dups:,}")
 
 for c in ["DNI", "FECHA", "ASISTENCIA"]:
 
     if c in Asistencias.columns:
 
         nulos = Asistencias[c].isna().sum()
-        print(f"ℹ️ Nulos {c}: {nulos:,} / {len(Asistencias):,}")
+        print(f"Nulos {c}: {nulos:,} / {len(Asistencias):,}")
 
 if "CENTRO" in Asistencias.columns:
 
@@ -252,7 +252,7 @@ for col in ["F_INCORPORACION", "F_SALIDA", "FECHA"]:
             lambda x: x.strftime("%Y-%m-%d") if pd.notnull(x) else None
         )
 
-print("✔ Fechas transformadas")
+print("Fechas transformadas")
 
 
 # ================================================================
@@ -266,7 +266,7 @@ for col in ["A_ESPERADAS", "A_REALES", "PORC_PART"]:
 
         Asistencias[col] = pd.to_numeric(Asistencias[col], errors="coerce")
 
-print("✔ Numéricos transformados")
+print("Numéricos transformados")
 
 
 # ================================================================
@@ -286,7 +286,7 @@ if "CENTRO" in Asistencias.columns:
 
     Asistencias["CENTRO"] = Asistencias["CENTRO"].replace("nan", None)
 
-print("✔ Centro limpio")
+print("Centro limpio")
 
 
 # ================================================================
@@ -302,7 +302,7 @@ Asistencias = Asistencias.replace({
     np.nan: None
 })
 
-print("✔ Nulos normalizados")
+print("Nulos normalizados")
 
 
 # ================================================================
@@ -327,11 +327,11 @@ invalid_cols = [c for c in Asistencias.columns if c not in sf_fields]
 
 if invalid_cols:
 
-    print("\n⚠️ Campos inexistentes en Salesforce:")
+    print("\n Campos inexistentes en Salesforce:")
     print(invalid_cols)
     Asistencias = Asistencias.drop(columns=invalid_cols)
 
-print("✔ Validación de campos OK")
+print("Validación de campos OK")
 
 
 # ================================================================
@@ -340,8 +340,8 @@ print("✔ Validación de campos OK")
 records_insert = Asistencias.to_dict("records")
 
 print("\n=== RESUMEN FINAL PRE-CARGA ===")
-print(f"ℹ️ Registros a insertar: {len(records_insert):,}")
-print(f"ℹ️ Campos finales: {len(Asistencias.columns)}")
+print(f"Registros a insertar: {len(records_insert):,}")
+print(f"Campos finales: {len(Asistencias.columns)}")
 
 
 # ================================================================
@@ -370,13 +370,13 @@ for i in range(0, len(records_insert), INSERT_BATCH_SIZE):
     insert_batches.append(batch_id)
 
     print(
-        f"📤 Lote {i // INSERT_BATCH_SIZE + 1} enviado "
+        f"Lote {i // INSERT_BATCH_SIZE + 1} enviado "
         f"({len(batch_records)} registros)"
     )
 
 bulk.close_job(insert_job)
 
-print("\n⏳ Esperando resultados Salesforce...")
+print("\n Esperando resultados Salesforce...")
 
 
 # ================================================================
@@ -400,7 +400,7 @@ for i, batch_id in enumerate(insert_batches, start=1):
     for err, n in errores.items():
         errores_totales[err] = errores_totales.get(err, 0) + n
 
-    print(f"✔ Lote {i}: insertados={ok}, fallidos={fail}")
+    print(f"Lote {i}: insertados={ok}, fallidos={fail}")
 
 
 # ================================================================
@@ -410,9 +410,9 @@ print("\n====================================================")
 print("=== RESULTADO FINAL ===")
 print("====================================================")
 
-print(f"✅ Insertados: {insertados:,}")
-print(f"❌ Fallidos: {fallidos:,}")
-print(f"📦 Total procesados: {len(records_insert):,}")
+print(f"Insertados: {insertados:,}")
+print(f"Fallidos: {fallidos:,}")
+print(f"Total procesados: {len(records_insert):,}")
 
 if errores_totales:
 
@@ -426,4 +426,4 @@ if errores_totales:
 
         print(f"{n} filas -> {err}")
 
-print("\n🎉 PROCESO FINALIZADO")
+print("\n PROCESO FINALIZADO")

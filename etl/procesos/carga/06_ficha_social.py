@@ -8,11 +8,18 @@ import pandas as pd
 from simple_salesforce import Salesforce
 from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
+import time
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
 
 print("=== Eliminación de resultados previos Salesforce ===")
 
 # ================================================================
-# 1️⃣ Variables de entorno
+# 1 Variables de entorno
 # ================================================================
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
@@ -24,7 +31,7 @@ if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
     )
 
 # ================================================================
-# 1️⃣ Conexión a Salesforce
+# 1 Conexión a Salesforce
 # ================================================================
 sf = Salesforce(
     username=SF_USERNAME,
@@ -43,7 +50,7 @@ bulk = SalesforceBulk(
 SF_OBJECT = "Ficha_social_e__c"
 
 # ==========================================================
-# 2️⃣ Eliminar registros previos del objeto
+# 2 Eliminar registros previos del objeto
 # ==========================================================
 query = f"SELECT Id FROM {SF_OBJECT}"
 records = sf.query_all(query)['records']
@@ -55,19 +62,26 @@ else:
 
     job = bulk.create_delete_job(SF_OBJECT, contentType='JSON')
 
+    delete_batches = []
     batch_size = 10000
     for i in range(0, len(ids), batch_size):
         batch_records = ids[i:i+batch_size]
         json_bytes = json.dumps(batch_records).encode('utf-8')
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        batch_id = bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        delete_batches.append(batch_id)
 
     bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, job, batch_id)
+
+    print(f"Eliminacion completada: {len(ids)} registros")
 
 print("=== Iniciando carga a Salesforce (Ficha Social) ===")
 
 # ==========================================================
-# 3️⃣ Cargar consolidado
+# 3 Cargar consolidado
 # ==========================================================
 ruta_consolidado = Path("data/consolidated/ficha_social/Ficha_Social_v2.xlsx")
 
@@ -84,10 +98,10 @@ df = pd.read_excel(
     }
 )
 
-print(f"✔ Archivo leído correctamente: {len(df)} filas")
+print(f"Archivo leido correctamente: {len(df)} filas")
 
 # ==========================================================
-# 4️⃣ Mapeo de columnas hacia Salesforce
+# 4 Mapeo de columnas hacia Salesforce
 # ==========================================================
 mapeo = {
     "Marca temporal": "Marca_temporal__c",
@@ -198,10 +212,10 @@ df = df.drop(columns=["Apellido materno.1",
                       "Apellido paterno.1",
                       "Apellido materno.2"
                      ], errors="ignore")
-print("✔ Columnas renombradas para Salesforce")
+print("Columnas renombradas para Salesforce")
 
 # ==========================================================
-# 5️⃣ Convertir fechas
+# CONVERTIR FECHAS
 # ==========================================================
 for col in ["Marca_temporal__c", "Fecha_de_nacimiento__c", "Fecha_de_nacimiento1__c"]:
     if col in df.columns:
@@ -209,12 +223,12 @@ for col in ["Marca_temporal__c", "Fecha_de_nacimiento__c", "Fecha_de_nacimiento1
         df[col] = df[col].apply(lambda x: x.strftime("%Y-%m-%d") if pd.notnull(x) else None)
 
 # ==========================================================
-# 6️⃣ Limpiar NaN para Salesforce
+# 6 Limpiar NaN para Salesforce
 # ==========================================================
 df = df.replace({np.nan: None, pd.NA: None})
 
 # ==========================================================
-# 7️⃣ Convertir todo a string excepto fechas ya tratadas
+# 7 Convertir todo a string excepto fechas ya tratadas
 # ==========================================================
 for col in df.columns:
     if col not in ["Marca_temporal__c", "Fecha_de_nacimiento__c", "Fecha_de_nacimiento1__c"]:
@@ -223,20 +237,20 @@ for col in df.columns:
 df = df.replace({"nan": None, "None": None, "NaT": None})
 
 # ==========================================================
-# 8️⃣ Debug opcional: guardar archivo final para revisar columnas
+# 8 Debug opcional: guardar archivo final para revisar columnas
 # ==========================================================
 output_debug = Path("data/consolidated/ficha_social/DEBUG_para_salesforce.xlsx")
 output_debug.parent.mkdir(parents=True, exist_ok=True)
 df.to_excel(output_debug, index=False)
-print(f"📁 Archivo final guardado para revisión: {output_debug}")
+print(f"Archivo final guardado para revision: {output_debug}")
 
 # ==========================================================
-# 9️⃣ Convertir a records
+# 9 Convertir a records
 # ==========================================================
 records = df.to_dict("records")
 
 # ==========================================================
-# 🔟 Insertar en Salesforce
+# Insertar en Salesforce
 # ==========================================================
 job = bulk.create_insert_job(SF_OBJECT, contentType='JSON')
 
@@ -254,5 +268,4 @@ for i in range(0, len(records), batch_size):
 
 bulk.close_job(job)
 
-print("✅ Proceso enviado a Salesforce")
-print("✅ ETL completado y enviado a Salesforce.")
+print("Proceso enviado a Salesforce correctamente")

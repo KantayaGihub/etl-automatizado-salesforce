@@ -84,7 +84,7 @@ def download_file(filename: str, output_path: Path) -> Path:
 def main() -> None:
     print("=== DESCARGA PROGRESO CURRICULAR ===")
     path = download_file(FILE_NAME, RAW_FILE_PATH)
-    print("✅ Archivo descargado")
+    print("Archivo descargado")
     print(path.resolve())
 
 

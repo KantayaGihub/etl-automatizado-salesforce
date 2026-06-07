@@ -24,7 +24,7 @@ service = build("drive", "v3", credentials=creds)
 
 
 # ================================
-# 1️⃣ LISTAR ARCHIVOS DENTRO DE LA CARPETA
+# 1 LISTAR ARCHIVOS DENTRO DE LA CARPETA
 # ================================
 print("=== Buscando archivos XLSX dentro de la carpeta ===")
 
@@ -40,19 +40,19 @@ files = results.get("files", [])
 print(f"→ Se encontraron {len(files)} archivos .xlsx")
 
 if len(files) == 0:
-    print("⚠ No se encontraron archivos XLSX en la carpeta. Verifica permisos o IDs.")
+    print("No se encontraron archivos XLSX en la carpeta. Verifica permisos o IDs.")
     exit()
 
 
 # ================================
-# 2️⃣ DESCARGAR CADA ARCHIVO
+# 2 DESCARGAR CADA ARCHIVO
 # ================================
 for file in files:
     file_id = file["id"]
     file_name = file["name"]
     local_path = os.path.join(OUTPUT_DIR, file_name)
 
-    print(f"\n📥 Descargando: {file_name}")
+    print(f"\n Descargando: {file_name}")
 
     request = service.files().get_media(fileId=file_id)
     fh = io.FileIO(local_path, "wb")
@@ -61,9 +61,9 @@ for file in files:
     done = False
     while not done:
         status, done = downloader.next_chunk()
-        print(f"  Progreso: {int(status.progress() * 100)}%")
+        print(f"Progreso: {int(status.progress() * 100)}%")
 
-    print(f"  ✔ Archivo guardado en: {local_path}")
+    print(f"Archivo guardado en: {local_path}")
 
-print("\n🎉 DESCARGA COMPLETA: Todos los archivos fueron descargados exitosamente.")
+print("\n DESCARGA COMPLETA: Todos los archivos fueron descargados exitosamente.")
 

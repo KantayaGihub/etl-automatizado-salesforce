@@ -8,11 +8,18 @@ import pandas as pd
 from simple_salesforce import Salesforce
 from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
+import time
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
 
 print("=== Eliminación de resultados previos Salesforce ===")
 
 # ================================================================
-# 1️⃣ Variables de entorno
+# 1 Variables de entorno
 # ================================================================
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
@@ -24,7 +31,7 @@ if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
     )
 
 # ================================================================
-# 1️⃣ Conexión a Salesforce
+# 1 Conexión a Salesforce
 # ================================================================
 sf = Salesforce(
     username=SF_USERNAME,
@@ -44,7 +51,7 @@ bulk = SalesforceBulk(
 OBJECT_NAME = "asistencia_actividades_vivenciales__c"
 
 # ==========================================================
-# 2️⃣ Eliminar registros previos
+# 2 Eliminar registros previos
 # ==========================================================
 query = f"SELECT Id FROM {OBJECT_NAME}"
 records = sf.query_all(query)["records"]
@@ -56,19 +63,26 @@ else:
 
     job = bulk.create_delete_job(OBJECT_NAME, contentType="JSON")
 
+    delete_batches = []
     batch_size = 10000
     for i in range(0, len(ids), batch_size):
         batch_records = ids[i:i + batch_size]
         json_bytes = json.dumps(batch_records).encode("utf-8")
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        batch_id = bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        delete_batches.append(batch_id)
 
     bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, job, batch_id)
+
+    print(f"Eliminacion completada: {len(ids)} registros")
 
 print("=== Iniciando carga a Salesforce ===")
 
 # ==========================================================
-# 3️⃣ Leer consolidado
+# 3 Leer consolidado
 # ==========================================================
 input_path = Path(
     "data/consolidated/asistencia_actividades_vivenciales/BD_asistencia_actividades_vivenciales.csv"
@@ -82,10 +96,10 @@ df = pd.read_csv(
     dtype={"DNI": str}
 )
 
-print(f"✔ Archivo leído correctamente: {len(df)} filas")
+print(f"Archivo leido correctamente: {len(df)} filas")
 
 # ==========================================================
-# 4️⃣ Convertir columnas
+# 4 Convertir columnas
 # ==========================================================
 if "FECHA" in df.columns:
     df["FECHA"] = pd.to_datetime(df["FECHA"], errors="coerce", dayfirst=True)
@@ -98,7 +112,7 @@ for col in ["ASISTENCIAS PROGRAMADAS", "ASISTENCIAS REALES", "% PART."]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
 # ==========================================================
-# 5️⃣ Renombrar columnas para Salesforce
+# 5 Renombrar columnas para Salesforce
 # ==========================================================
 mapeo = {
     "FECHA": "FECHA__c",
@@ -120,10 +134,10 @@ mapeo = {
 
 df = df.rename(columns=mapeo)
 
-print("✔ Columnas renombradas para Salesforce")
+print("Columnas renombradas para Salesforce")
 
 # ==========================================================
-# 6️⃣ Limpiar nulos
+# 6 Limpiar nulos
 # ==========================================================
 df = df.where(pd.notnull(df), None)
 df = df.replace({
@@ -133,7 +147,7 @@ df = df.replace({
 })
 
 # ==========================================================
-# 7️⃣ Guardar debug
+# 7 Guardar debug
 # ==========================================================
 debug_path = Path(
     "data/consolidated/asistencia_actividades_vivenciales/DEBUG_para_salesforce.csv"
@@ -141,15 +155,15 @@ debug_path = Path(
 debug_path.parent.mkdir(parents=True, exist_ok=True)
 
 df.to_csv(debug_path, index=False, encoding="utf-8-sig")
-print(f"📁 [DEBUG] DataFrame final guardado en: {debug_path}")
+print(f"Archivo final guardado en: {debug_path}")
 
 # ==========================================================
-# 8️⃣ Convertir a records
+# 8 Convertir a records
 # ==========================================================
 records = df.to_dict("records")
 
 # ==========================================================
-# 9️⃣ Insertar en Salesforce
+# 9 Insertar en Salesforce
 # ==========================================================
 job = bulk.create_insert_job(OBJECT_NAME, contentType="JSON")
 
@@ -168,4 +182,4 @@ for i in range(0, len(records), batch_size):
 
 bulk.close_job(job)
 
-print("✅ Proceso enviado a Salesforce")
+print("Proceso enviado a Salesforce correctamente")

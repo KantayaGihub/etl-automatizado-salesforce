@@ -8,11 +8,18 @@ import numpy as np
 from simple_salesforce import Salesforce
 from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
+import time
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
 
 print("=== Eliminación de resultados previos Salesforce ===")
 
 # ================================================================
-# 1️⃣ Variables de entorno
+# 1 Variables de entorno
 # ================================================================
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
@@ -24,7 +31,7 @@ if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
     )
 
 # ================================================================
-# 1️⃣ Conexión a Salesforce
+# 1 Conexión a Salesforce
 # ================================================================
 sf = Salesforce(
     username=SF_USERNAME,
@@ -43,7 +50,7 @@ bulk = SalesforceBulk(
 OBJECT_NAME = "Formulario_SolicitudMatricula_e__c"
 
 # ==========================================================
-# 2️⃣ Eliminar registros previos
+# 2 Eliminar registros previos
 # ==========================================================
 query = f"SELECT Id FROM {OBJECT_NAME}"
 records = sf.query_all(query)['records']
@@ -55,26 +62,33 @@ else:
 
     job = bulk.create_delete_job(OBJECT_NAME, contentType='JSON')
 
+    delete_batches = []
     batch_size = 10000
     for i in range(0, len(ids), batch_size):
         batch_records = ids[i:i+batch_size]
         json_bytes = json.dumps(batch_records).encode('utf-8')
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        batch_id = bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        delete_batches.append(batch_id)
 
     bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, job, batch_id)
+
+    print(f"Eliminacion completada: {len(ids)} registros")
 
 print("=== Iniciando carga a Salesforce ===")
 
 # ==========================================================
-# 3️⃣ Cargar consolidado
+# 3 Cargar consolidado
 # ==========================================================
 input_path = Path("data/consolidated/solicitud_matricula/Sol_Mtr_Deduplicado.csv")
 
 if not input_path.exists():
     raise FileNotFoundError(f"No existe el consolidado: {input_path}")
 
-print(f"📥 Cargando archivo: {input_path}")
+print(f"Cargando archivo: {input_path}")
 
 df = pd.read_csv(
     input_path,
@@ -84,16 +98,16 @@ df = pd.read_csv(
     }
 )
 
-print(f"✔ Archivo leído correctamente: {len(df)} filas")
+print(f"Archivo leido correctamente: {len(df)} filas")
 
 # ==========================================================
-# 4️⃣ Mantener ANIO_FUENTE si existe
+# 4 Mantener ANIO_FUENTE si existe
 # ==========================================================
 if "ANIO_FUENTE" in df.columns:
     df = df.rename(columns={"ANIO_FUENTE": "ANIO_FUENTE__c"})
 
 # ==========================================================
-# 5️⃣ Mapeo de columnas → Salesforce
+# 5 Mapeo de columnas → Salesforce
 # ==========================================================
 mapeo = {
     "Marca temporal": "Marca_temporal__c",
@@ -175,7 +189,7 @@ df = df.rename(columns=mapeo)
 df = df.drop(columns=["Nombre/s del niño/a", "Departamento.1"])
 
 # ==========================================================
-# 6️⃣ Convertir fechas
+# 6 Convertir fechas
 # ==========================================================
 for col in ["Fecha_de_nacimiento__c", "Marca_temporal__c"]:
     if col in df.columns:
@@ -183,33 +197,33 @@ for col in ["Fecha_de_nacimiento__c", "Marca_temporal__c"]:
         df[col] = df[col].apply(lambda x: x.strftime('%Y-%m-%d') if pd.notnull(x) else None)
 
 # ==========================================================
-# 7️⃣ Convertir numéricos
+# 7 Convertir numéricos
 # ==========================================================
 if "EDAD__c" in df.columns:
     df["EDAD__c"] = pd.to_numeric(df["EDAD__c"], errors="coerce")
 
 # ==========================================================
-# 8️⃣ Limpiar nulos
+# 8 Limpiar nulos
 # ==========================================================
 df = df.where(pd.notnull(df), None)
 df = df.replace({float('nan'): None, pd.NA: None, np.nan: None})
 
 # ==========================================================
-# 9️⃣ Guardar debug
+# 9 Guardar debug
 # ==========================================================
 debug_path = Path("data/consolidated/solicitud_matricula/DEBUG_para_salesforce.csv")
 debug_path.parent.mkdir(parents=True, exist_ok=True)
 
 df.to_csv(debug_path, index=False, encoding="utf-8-sig")
-print(f"📁 [DEBUG] DataFrame final guardado en: {debug_path}")
+print(f"Archivo final guardado en: {debug_path}")
 
 # ==========================================================
-# 🔟 Convertir a records
+# Convertir a records
 # ==========================================================
 records = df.to_dict('records')
 
 # ==========================================================
-# 1️⃣1️⃣ Insertar en Salesforce
+# 11 Insertar en Salesforce
 # ==========================================================
 job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
 
@@ -228,4 +242,4 @@ for i in range(0, len(records), batch_size):
 
 bulk.close_job(job)
 
-print("✅ Proceso enviado a Salesforce. Revisa resultados con bulk.get_all_batches(job)")
+print("Proceso enviado a Salesforce correctamente")

@@ -35,7 +35,7 @@ def renombrar_columnas_duplicadas(df):
 # ============================================================
 def codebook(df, pk_col):
 
-    print("📊 Generando métricas de calidad...")
+    print("Generando métricas de calidad...")
 
     resumen = pd.DataFrame({
 
@@ -51,7 +51,7 @@ def codebook(df, pk_col):
 
     })
 
-    print("📌 Calculando mínimos y máximos...")
+    print("Calculando mínimos y máximos...")
 
     resumen["Mínimo"] = df.apply(
 
@@ -77,7 +77,7 @@ def codebook(df, pk_col):
 
     )
 
-    print("🔍 Verificando duplicados...")
+    print("Verificando duplicados...")
 
     resumen["Duplicados (Valores)"] = "No"
 
@@ -100,7 +100,7 @@ def codebook(df, pk_col):
             ] = f"Sí ({total_dups} duplicados)"
 
             print(
-                f"⚠️ Duplicados encontrados "
+                f"Duplicados encontrados "
                 f"en PK ({pk_col}): {total_dups}"
             )
 
@@ -112,7 +112,7 @@ def codebook(df, pk_col):
             ] = "No (PK válida)"
 
             print(
-                f"✅ PK válida "
+                f"PK válida "
                 f"({pk_col})"
             )
 
@@ -127,7 +127,7 @@ def codebook(df, pk_col):
                     "Duplicados (Valores)"
                 ] = "Sí"
 
-    print("🧪 Generando muestra de valores únicos...")
+    print("Generando muestra de valores únicos...")
 
     resumen["Valores únicos (Muestra)"] = df.apply(
 
@@ -161,7 +161,7 @@ def limpiar_y_generar_ficha_social_v2(
     print(f"--- Procesando Ficha Social (v2) ---")
 
     print(
-        f"🔎 Archivo de entrada esperado: "
+        f"Archivo de entrada esperado: "
         f"{file_path}"
     )
 
@@ -171,7 +171,7 @@ def limpiar_y_generar_ficha_social_v2(
     if not Path(file_path).exists():
 
         print(
-            f"❌ ERROR: "
+            f"ERROR: "
             f"No se encontró el archivo "
             f"{file_path}"
         )
@@ -197,7 +197,7 @@ def limpiar_y_generar_ficha_social_v2(
 
     )
 
-    print("✔ Archivo cargado correctamente")
+    print("Archivo cargado correctamente")
 
     # ========================================================
     # RENOMBRAR DUPLICADAS
@@ -292,7 +292,7 @@ def limpiar_y_generar_ficha_social_v2(
     # ========================================================
     # GENERAR CODEBOOK
     # ========================================================
-    print("\n📊 GENERANDO REPORTE DE CALIDAD...")
+    print("\n GENERANDO REPORTE DE CALIDAD...")
 
     df_code = codebook(
         df,
@@ -331,12 +331,12 @@ def limpiar_y_generar_ficha_social_v2(
     )
 
     print(
-        f"🎉 Archivo final generado "
+        f"Archivo final generado "
         f"→ {out_path}"
     )
 
     print(
-        f"📊 Reporte calidad generado "
+        f"Reporte calidad generado "
         f"→ {calidad_path}"
     )
 

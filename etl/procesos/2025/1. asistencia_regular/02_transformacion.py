@@ -20,9 +20,9 @@ CARPETA_SALIDA = Path("data/processed/2025/asistencia_regular")
 ARCHIVO_SALIDA = CARPETA_SALIDA / "asistencias_2025_limpio.csv"
 
 if not CARPETA.exists():
-    raise Exception(f"❌ La carpeta de entrada no existe: {CARPETA}")
+    raise Exception(f"La carpeta de entrada no existe: {CARPETA}")
 else:
-    print(f"📂 Procesando archivos desde: {CARPETA}")
+    print(f"Procesando archivos desde: {CARPETA}")
 
 # Parámetros de lectura por hoja
 FILA_ENCABEZADO = 6      # C7 ⇒ fila 7 en Excel; pandas usa base 0, por eso header=6
@@ -121,7 +121,7 @@ def codebook(df):
     Genera un DataFrame de resumen (codebook) sobre la calidad de datos
     del DataFrame final.
     """
-    print("   Calculando tipos, nulos y únicos...")
+    print("Calculando tipos, nulos y únicos...")
     resumen = pd.DataFrame({
         "Tipo": df.dtypes,
         "Nulos (#)": df.isnull().sum(),
@@ -129,12 +129,12 @@ def codebook(df):
         "Valores únicos (#)": df.nunique(),
     })
 
-    print("   Calculando min/max numéricos...")
+    print("Calculando min/max numéricos...")
     # Usar skipna=True para ignorar nulos en min/max
     resumen["Mínimo"] = df.apply(lambda x: x.min(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
     resumen["Máximo"] = df.apply(lambda x: x.max(skipna=True) if pd.api.types.is_numeric_dtype(x) else None)
 
-    print("   Verificando valores duplicados (dentro de la columna)...")
+    print("Verificando valores duplicados (dentro de la columna)...")
 
     # --- MODIFICACIÓN: Chequeo de PK (DNI) ---
     resumen["Duplicados (Valores)"] = "No" # Default
@@ -143,10 +143,10 @@ def codebook(df):
         # (Aunque en este punto del flujo, el codebook recibe el DF ya filtrado)
         total_dups_dni = df['DNI'].dropna().duplicated().sum()
         if total_dups_dni > 0:
-            print(f"   -> ALERTA PK (DNI): {total_dups_dni} duplicados encontrados.")
+            print(f"-> ALERTA PK (DNI): {total_dups_dni} duplicados encontrados.")
             resumen.loc["DNI", "Duplicados (Valores)"] = f"¡SÍ! ({total_dups_dni} duplicados)"
         else:
-            print("   -> Verificación PK (DNI): OK (0 duplicados).")
+            print("-> Verificación PK (DNI): OK (0 duplicados).")
             resumen.loc["DNI", "Duplicados (Valores)"] = "No (PK Válida)"
 
     # Chequear duplicados para otras columnas
@@ -155,7 +155,7 @@ def codebook(df):
             resumen.loc[col, "Duplicados (Valores)"] = "Sí"
     # --- FIN MODIFICACIÓN ---
 
-    print("   Extrayendo muestra de valores únicos (límite 50)...")
+    print("Extrayendo muestra de valores únicos (límite 50)...")
     def get_unique_values(x):
         unicos = x.dropna().unique()
         if x.nunique() > 50:
@@ -187,14 +187,14 @@ def leer_rango_dinamico(path: Path, hoja: str) -> pd.DataFrame:
             path, sheet_name=hoja, header=None, skiprows=FILA_ENCABEZADO, nrows=1, engine="openpyxl"
         )
     except Exception as e:
-        print(f"  [ERROR] Encabezado {path.name} - {hoja}: {e}")
+        print(f"[ERROR] Encabezado {path.name} - {hoja}: {e}")
         return pd.DataFrame()
 
     # 2) Detectar posiciones de fechas en los encabezados
     headers = header_row.iloc[0].tolist()
     fechas_idx = detect_fecha_cols(headers)
     if not fechas_idx:
-        print(f"  [AVISO] Sin fechas detectadas en {hoja}")
+        print(f"[AVISO] Sin fechas detectadas en {hoja}")
         return pd.DataFrame()
 
     # 3) Calcular rango final (última fecha + 3 columnas)
@@ -211,7 +211,7 @@ def leer_rango_dinamico(path: Path, hoja: str) -> pd.DataFrame:
         df = df.dropna(axis=1, how="all").dropna(axis=0, how="all")
         return df
     except Exception as e:
-        print(f"  [ERROR] Datos {path.name} - {hoja}: {e}")
+        print(f"[ERROR] Datos {path.name} - {hoja}: {e}")
         return pd.DataFrame()
 
 # ---------- NORMALIZACIÓN DE IDENTIDAD --------------------------------------
@@ -421,18 +421,18 @@ def main():
     """
     # 1) Descubrimiento de libros válidos (omite ~$. temporales)
     excels = [p for p in CARPETA.glob("*") if p.suffix.lower() in EXTS and not p.name.startswith("~$")]
-    print(f"📂 Archivos Excel encontrados: {len(excels)}")
+    print(f"Archivos Excel encontrados: {len(excels)}")
     all_frames = []
 
     # 2) Procesamiento por archivo
     for f in excels:
-        print(f"🔹 Procesando: {f.name}")
+        print(f"Procesando: {f.name}")
         df = procesar_archivo(f)
         if not df.empty:
             all_frames.append(df)
 
     if not all_frames:
-        print("⚠️ No se extrajo información de asistencia.")
+        print("No se extrajo información de asistencia.")
         return
 
     # 3) Consolidación global
@@ -448,12 +448,12 @@ def main():
         big[dni_col] = big[dni_col].astype(str).str.replace(r'\D', '', regex=True).replace('', np.nan).replace('nan', np.nan)
         big = big[big[dni_col].notna()]
         after = len(big)
-        print(f"✅ Filas sin DNI eliminadas: {before - after:,} (quedan {after:,})")
+        print(f"Filas sin DNI eliminadas: {before - after:,} (quedan {after:,})")
     else:
-        print("⚠️ No se encontró columna 'DNI' para filtrar (se conserva todo).")
+        print("No se encontró columna 'DNI' para filtrar (se conserva todo).")
 
     # --- NUEVO: PASO 4.5 - Uniformización y Creación de Columnas ---
-    print("🔧 Uniformizando 'SEXO', 'TIPO DE ALUMNO' y creando 'CENTRO'...")
+    print("Uniformizando 'SEXO', 'TIPO DE ALUMNO' y creando 'CENTRO'...")
 
     # [A] Normalizar SEXO
     if "SEXO" in big.columns:
@@ -508,7 +508,7 @@ def main():
     big = big[cols_orden].rename(columns=rename_map)
 
     # 6) Formato de fecha dd/mm/yyyy (y coerción de errores)
-    print("🔧 Formateando columnas de fecha (F_INCORPORACION, F_SALIDA, FECHA)...")
+    print("Formateando columnas de fecha (F_INCORPORACION, F_SALIDA, FECHA)...")
 
     # Columnas a formatear (usa los nombres finales del DataFrame)
     date_cols_to_format = ["FECHA", "F_INCORPORACION", "F_SALIDA"]
@@ -525,11 +525,11 @@ def main():
             big[col] = string_series.replace("NaT", np.nan)
         else:
             # Imprimir aviso si una columna esperada no se encuentra
-            print(f"   (Aviso: Columna {col} no encontrada para formateo de fecha)")
+            print(f"(Aviso: Columna {col} no encontrada para formateo de fecha)")
 
 
     # --- NUEVO: PASO 7 - Generar Reporte de Calidad ----------------------
-    print("\n📊 Generando reporte de calidad de datos (Codebook)...")
+    print("\n Generando reporte de calidad de datos (Codebook)...")
 
     # Llamar a la función codebook con el DataFrame final
     df_calidad = codebook(big)
@@ -539,7 +539,7 @@ def main():
         # Asegurarse de que la carpeta de salida exista
         CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
         df_calidad.to_excel(SALIDA_CALIDAD, index=False, engine="openpyxl")
-        print(f"✅ Reporte de calidad guardado en:\n{SALIDA_CALIDAD}")
+        print(f"Reporte de calidad guardado en:\n{SALIDA_CALIDAD}")
     except Exception as e:
         print(f"[ERROR] No se pudo guardar el reporte de calidad: {e}")
     # ---------------------------------------------------------------------
@@ -549,8 +549,8 @@ def main():
     big.to_csv(SALIDA, index=False, encoding="utf-8-sig")
 
     # Resumen
-    print(f"\n✅ Consolidado general guardado en:\n{SALIDA}")
-    print(f"   Filas: {len(big):,} | Columnas: {len(big.columns)}")
+    print(f"\n Consolidado general guardado en:\n{SALIDA}")
+    print(f"Filas: {len(big):,} | Columnas: {len(big.columns)}")
 
 # Punto de entrada
 if __name__ == "__main__":

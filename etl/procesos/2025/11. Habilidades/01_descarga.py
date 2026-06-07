@@ -107,7 +107,7 @@ def main() -> None:
 
     output_path = download_file(FILE_NAME, RAW_FILE_PATH)
 
-    print("✅ Archivo descargado correctamente")
+    print("Archivo descargado correctamente")
     print(f"Ruta: {output_path.resolve()}")
 
 

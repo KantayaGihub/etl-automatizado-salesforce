@@ -84,7 +84,7 @@ def main():
 
     path = download_file(FILE_NAME, RAW_FILE_PATH)
 
-    print("✅ Archivo descargado")
+    print("Archivo descargado")
     print(path.resolve())
 
 

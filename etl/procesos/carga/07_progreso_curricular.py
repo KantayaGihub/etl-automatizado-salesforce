@@ -8,11 +8,18 @@ import pandas as pd
 from simple_salesforce import Salesforce
 from salesforce_bulk import SalesforceBulk
 from salesforce_bulk.util import IteratorBytesIO
+import time
+
+
+def wait_for_batch(bulk_client, job_id, batch_id):
+    while not bulk_client.is_batch_done(batch_id, job_id):
+        time.sleep(5)
+
 
 print("=== Eliminación de resultados previos Salesforce ===")
 
 # ================================================================
-# 1️⃣ Variables de entorno
+# 1 Variables de entorno
 # ================================================================
 SF_USERNAME = os.getenv("SF_USERNAME")
 SF_PASSWORD = os.getenv("SF_PASSWORD")
@@ -24,7 +31,7 @@ if not SF_USERNAME or not SF_PASSWORD or not SF_SECURITY_TOKEN:
     )
 
 # ================================================================
-# 1️⃣ Conexión a Salesforce
+# 1 Conexión a Salesforce
 # ================================================================
 sf = Salesforce(
     username=SF_USERNAME,
@@ -43,7 +50,7 @@ bulk = SalesforceBulk(
 OBJECT_NAME = "Progreso_curricular_e__c"
 
 # ==========================================================
-# 2️⃣ Eliminar registros previos del objeto
+# 2 Eliminar registros previos del objeto
 # ==========================================================
 query = f"SELECT Id FROM {OBJECT_NAME}"
 records = sf.query_all(query)['records']
@@ -55,19 +62,26 @@ else:
 
     job = bulk.create_delete_job(OBJECT_NAME, contentType='JSON')
 
+    delete_batches = []
     batch_size = 10000
     for i in range(0, len(ids), batch_size):
         batch_records = ids[i:i+batch_size]
         json_bytes = json.dumps(batch_records).encode('utf-8')
-        bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        batch_id = bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
+        delete_batches.append(batch_id)
 
     bulk.close_job(job)
-    print(f"Se enviaron {len(ids)} registros para eliminación.")
+
+    print("Esperando finalizacion de eliminaciones...")
+    for batch_id in delete_batches:
+        wait_for_batch(bulk, job, batch_id)
+
+    print(f"Eliminacion completada: {len(ids)} registros")
 
 print("=== Cargando archivo consolidado ===")
 
 # ==========================================================
-# 3️⃣ Cargar consolidado
+# 3 Cargar consolidado
 # ==========================================================
 INPUT_PATH = Path("data/consolidated/progreso_curricular/BD_Curricula_Consolidada.csv")
 
@@ -76,10 +90,10 @@ if not INPUT_PATH.exists():
 
 Progreso_Curricular = pd.read_csv(INPUT_PATH)
 
-print(f"✔ Archivo leído correctamente: {len(Progreso_Curricular)} filas")
+print(f"Archivo leido correctamente: {len(Progreso_Curricular)} filas")
 
 # ==========================================================
-# 4️⃣ Mantener trazabilidad si existe
+# 4 Mantener trazabilidad si existe
 # ==========================================================
 if "ANIO_FUENTE" in Progreso_Curricular.columns:
     Progreso_Curricular = Progreso_Curricular.rename(
@@ -124,7 +138,7 @@ if "RECURSO Y/O ESTRATREGIA" in Progreso_Curricular.columns:
     )
 
 # ==========================================================
-# 5️⃣ Agregar sufijo __c a columnas que aún no lo tienen
+# 5 Agregar sufijo __c a columnas que aún no lo tienen
 # ==========================================================
 Progreso_Curricular.columns = [
     col if str(col).endswith("__c") else f"{col}__c"
@@ -132,7 +146,7 @@ Progreso_Curricular.columns = [
 ]
 
 # ==========================================================
-# 6️⃣ Reemplazar nulos
+# 6 Reemplazar nulos
 # ==========================================================
 Progreso_Curricular = Progreso_Curricular.where(pd.notnull(Progreso_Curricular), None)
 Progreso_Curricular = Progreso_Curricular.replace({
@@ -142,20 +156,20 @@ Progreso_Curricular = Progreso_Curricular.replace({
 })
 
 # ==========================================================
-# 7️⃣ Debug opcional
+# 7 Debug opcional
 # ==========================================================
 output_debug = Path("data/consolidated/progreso_curricular/DEBUG_para_salesforce.csv")
 output_debug.parent.mkdir(parents=True, exist_ok=True)
 Progreso_Curricular.to_csv(output_debug, index=False, encoding="utf-8-sig")
-print(f"📁 Archivo final guardado para revisión: {output_debug}")
+print(f"Archivo final guardado para revision: {output_debug}")
 
 # ==========================================================
-# 8️⃣ Convertir DataFrame a lista de diccionarios
+# 8 Convertir DataFrame a lista de diccionarios
 # ==========================================================
 records = Progreso_Curricular.to_dict('records')
 
 # ==========================================================
-# 9️⃣ Crear job para insertar
+# 9 Crear job para insertar
 # ==========================================================
 job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
 
@@ -174,4 +188,4 @@ for i in range(0, len(records), batch_size):
 
 bulk.close_job(job)
 
-print("✅ Proceso enviado a Salesforce. Revisa resultados con bulk.get_all_batches(job)")
+print("Proceso enviado a Salesforce correctamente")
