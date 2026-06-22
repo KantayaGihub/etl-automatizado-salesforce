@@ -120,18 +120,17 @@ def limpiar_y_deduplicar_encuesta_padre(input_folder, output_csv, output_excel):
 if __name__ == "__main__":
 
     # Entrada RAW
-    input_excel = "data/raw/2025/5.encuesta_satisfaccion_padres"
+    input_excel = "data/raw/2026/5.encuesta_satisfaccion_padres"
 
     # Carpeta temporal CSV
-    input_csv = "data/raw/2025/5.encuesta_satisfaccion_padres/csv"
+    input_csv = "data/raw/2026/5.encuesta_satisfaccion_padres/csv"
     os.makedirs(input_csv, exist_ok=True)
 
     print("\n=== Convirtiendo Excel a CSV ===")
 
     VALID_FILES = {
         "Encuesta_Inicial_1y2.xlsx",
-        "Encuesta_3y4.xlsx",
-        "Encuesta_5y6.xlsx"
+
     }
 
     for fname in os.listdir(input_excel):
@@ -146,7 +145,7 @@ if __name__ == "__main__":
     print("Conversión completa\n")
 
     # Salida PROCESSED
-    output_dir = "data/processed/2025/5.encuesta_satisfaccion_padres"
+    output_dir = "data/processed/2026/5.encuesta_satisfaccion_padres"
     os.makedirs(output_dir, exist_ok=True)
 
     output_csv = os.path.join(output_dir, "Encuesta_Padres_Deduplicado.csv")

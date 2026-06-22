@@ -7,16 +7,8 @@ print("=== Descargando Google Sheets (Encuesta de Satisfacción Padres) ===")
 # Archivos a descargar (RUTAS CORRECTAS)
 FILES = [
     {
-        "id": "1dioUznUOz8vrisBVB3S2r0IcglSBmycnLu44R6N7jro",
-        "output": "data/raw/2025/5.encuesta_satisfaccion_padres/Encuesta_Inicial_1y2.xlsx"
-    },
-    {
-        "id": "1WhFrCWPOzEHWsXSiriVDNS4VLgdIFT4GJHgikaCuML4",
-        "output": "data/raw/2025/5.encuesta_satisfaccion_padres/Encuesta_3y4.xlsx"
-    },
-    {
-        "id": "1DV2pXJTdBf-WucXlbY-6kK5YYj_U4wjOSaU85t8_cyI",
-        "output": "data/raw/2025/5.encuesta_satisfaccion_padres/Encuesta_5y6.xlsx"
+        "id": "1SQ1DyAetm0Q4EnQkVV-JpBnEn2S7flEBj7dTYY45XEM",
+        "output": "data/raw/2026/5.encuesta_satisfaccion_padres/Encuesta_Inicial_1y2.xlsx"
     }
 ]
 
@@ -32,7 +24,7 @@ creds = Credentials.from_service_account_info(
 authed = AuthorizedSession(creds)
 
 # Crear carpeta correctamente
-os.makedirs("data/raw/2025/5.encuesta_satisfaccion_padres", exist_ok=True)
+os.makedirs("data/raw/2026/5.encuesta_satisfaccion_padres", exist_ok=True)
 
 # Descargar archivos
 for file in FILES:
