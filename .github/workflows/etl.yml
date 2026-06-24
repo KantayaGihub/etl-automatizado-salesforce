@@ -103,19 +103,19 @@ jobs:
     # ENCUESTA SATISFACCION PADRES
     # ============================================================
 
-    - name: Ejecutar Encuesta Satisfaccion Padres 2026 - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python "etl/procesos/2026/5. encuesta_satisfaccion_padres/01_descarga.py"
+    # - name: Ejecutar Encuesta Satisfaccion Padres 2026 - Descargar
+    #   env:
+    #     GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+    #   run: python "etl/procesos/2026/5. encuesta_satisfaccion_padres/01_descarga.py"
 
-    - name: Ejecutar Encuesta Satisfaccion Padres 2026 - Transformacion
-      run: python "etl/procesos/2026/5. encuesta_satisfaccion_padres/02_transformacion.py"
+    # - name: Ejecutar Encuesta Satisfaccion Padres 2026 - Transformacion
+    #   run: python "etl/procesos/2026/5. encuesta_satisfaccion_padres/02_transformacion.py"
 
-    - name: Ejecutar Consolidacion - Encuesta Satisfaccion Padres
-      run: python "etl/procesos/consolidacion/5_encuesta_satisfaccion_padres.py"
+    # - name: Ejecutar Consolidacion - Encuesta Satisfaccion Padres
+    #   run: python "etl/procesos/consolidacion/5_encuesta_satisfaccion_padres.py"
 
-    - name: Ejecutar carga a Salesforce - Encuesta Satisfaccion Padres
-      run: python "etl/procesos/carga/05_encuesta_satisfaccion_padres.py"
+    # - name: Ejecutar carga a Salesforce - Encuesta Satisfaccion Padres
+    #   run: python "etl/procesos/carga/05_encuesta_satisfaccion_padres.py"
 
     # ============================================================
     # FICHA SOCIAL
