@@ -197,21 +197,21 @@ jobs:
     # ASISTENCIA ACTIVIDADES VIVENCIALES
     # ============================================================
 
-    - name: Ejecutar Asistencia Actividades Vivenciales 2026 - Descargar
-      env:
-        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      run: python "etl/procesos/2026/10. Asistencia Actividades Vivenciales/01_descarga.py"
+    # - name: Ejecutar Asistencia Actividades Vivenciales 2026 - Descargar
+    #   env:
+    #     AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+    #     AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+    #     AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    #   run: python "etl/procesos/2026/10. Asistencia Actividades Vivenciales/01_descarga.py"
 
-    - name: Ejecutar Asistencia Actividades Vivenciales 2026 - Transformacion
-      run: python "etl/procesos/2026/10. Asistencia Actividades Vivenciales/02_transformacion.py"
+    # - name: Ejecutar Asistencia Actividades Vivenciales 2026 - Transformacion
+    #   run: python "etl/procesos/2026/10. Asistencia Actividades Vivenciales/02_transformacion.py"
 
-    - name: Ejecutar Consolidacion - Asistencia Actividades Vivenciales
-      run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
+    # - name: Ejecutar Consolidacion - Asistencia Actividades Vivenciales
+    #   run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
 
-    - name: Ejecutar carga a Salesforce - Asistencia Actividades Vivenciales
-      run: python "etl/procesos/carga/10_asistencia_act_vivenciales.py"
+    # - name: Ejecutar carga a Salesforce - Asistencia Actividades Vivenciales
+    #   run: python "etl/procesos/carga/10_asistencia_act_vivenciales.py"
 
     # ============================================================
     # IMPACTO HABILIDADES
