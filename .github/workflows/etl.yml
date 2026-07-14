@@ -139,21 +139,21 @@ jobs:
     # PROGRESO CURRICULAR
     # ============================================================
 
-    - name: Ejecutar Progreso Curricular 2026 - Descargar
-      env:
-        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      run: python "etl/procesos/2026/7. progreso_curricular/01_descarga.py"
+    # - name: Ejecutar Progreso Curricular 2026 - Descargar
+    #   env:
+    #     AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+    #     AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+    #     AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    #   run: python "etl/procesos/2026/7. progreso_curricular/01_descarga.py"
 
-    - name: Ejecutar Progreso Curricular 2026 - Transformacion
-      run: python "etl/procesos/2026/7. progreso_curricular/02_transformacion.py"
+    # - name: Ejecutar Progreso Curricular 2026 - Transformacion
+    #   run: python "etl/procesos/2026/7. progreso_curricular/02_transformacion.py"
 
-    - name: Ejecutar Consolidacion - Progreso Curricular
-      run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
+    # - name: Ejecutar Consolidacion - Progreso Curricular
+    #   run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
 
-    - name: Ejecutar carga a Salesforce - Progreso Curricular
-      run: python "etl/procesos/carga/07_progreso_curricular.py"
+    # - name: Ejecutar carga a Salesforce - Progreso Curricular
+    #   run: python "etl/procesos/carga/07_progreso_curricular.py"
 
     # ============================================================
     # SOLICITUD MATRICULA
