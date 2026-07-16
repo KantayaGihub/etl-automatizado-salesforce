@@ -17,7 +17,7 @@ SITE_PATH = os.getenv("SHAREPOINT_SITE_PATH", "/sites/EducativoKantaya")
 
 FILE_NAME = os.getenv(
     "SHAREPOINT_FILE_NAME",
-    "Habilidades para vida_Ventanilla y proyectos_Data Power BI.xlsx" 
+    "PE26_Ventanilla y proyectos_Habilidades.xlsx" 
 )
 
 RAW_DIR = Path("data/raw/2026/11.habilidades")

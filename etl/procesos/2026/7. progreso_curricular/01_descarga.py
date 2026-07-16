@@ -20,7 +20,7 @@ FILE_NAME = os.getenv(
 )
 
 RAW_DIR = Path("data/raw/2026/7.progreso_curricular")
-RAW_FILE_PATH = RAW_DIR / "curricula_after_school_2026.xlsx"
+RAW_FILE_PATH = RAW_DIR / "curricula_after_school_2026.xlsx" 
 
 
 def get_token() -> str:
