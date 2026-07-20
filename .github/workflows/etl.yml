@@ -29,37 +29,37 @@ jobs:
     # ASISTENCIA REGULAR
     # ============================================================
 
-    # - name: Ejecutar Asistencia Regular 2026 - Descargar
-    #   env:
-    #     GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #   run: python "etl/procesos/2026/1. asistencia_regular/01_descargar.py"
+    - name: Ejecutar Asistencia Regular 2026 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2026/1. asistencia_regular/01_descargar.py"
 
-    # - name: Ejecutar Asistencia Regular 2026 - Transformacion
-    #   run: python "etl/procesos/2026/1. asistencia_regular/02_transformacion.py"
+    - name: Ejecutar Asistencia Regular 2026 - Transformacion
+      run: python "etl/procesos/2026/1. asistencia_regular/02_transformacion.py"
 
-    # - name: Ejecutar Consolidacion - Asistencia Regular
-    #   run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
+    - name: Ejecutar Consolidacion - Asistencia Regular
+      run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
 
-    # - name: Ejecutar carga a Salesforce - Asistencia Regular
-    #   run: python "etl/procesos/carga/01_asistencia_regular.py"
+    - name: Ejecutar carga a Salesforce - Asistencia Regular
+      run: python "etl/procesos/carga/01_asistencia_regular.py"
 
     # # ============================================================
     # # ASISTENCIA EXTRACURRICULAR
     # # ============================================================
 
-    # - name: Ejecutar Extracurriculares 2026 - Descargar
-    #   env:
-    #     GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-    #   run: python "etl/procesos/2026/2. asistencia_extracurricular/01_descarga.py"
+    - name: Ejecutar Extracurriculares 2026 - Descargar
+      env:
+        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      run: python "etl/procesos/2026/2. asistencia_extracurricular/01_descarga.py"
 
-    # - name: Ejecutar Extracurriculares 2026 - Transformacion
-    #   run: python "etl/procesos/2026/2. asistencia_extracurricular/02_transformacion.py"
+    - name: Ejecutar Extracurriculares 2026 - Transformacion
+      run: python "etl/procesos/2026/2. asistencia_extracurricular/02_transformacion.py"
 
-    # - name: Ejecutar Consolidacion - Extracurriculares
-    #   run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
+    - name: Ejecutar Consolidacion - Extracurriculares
+      run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
 
-    # - name: Ejecutar carga a Salesforce - Extracurriculares
-    #   run: python "etl/procesos/carga/02_asistencia_extracurricular.py"
+    - name: Ejecutar carga a Salesforce - Extracurriculares
+      run: python "etl/procesos/carga/02_asistencia_extracurricular.py"
 
     # # ============================================================
     # # MATRICULA
@@ -217,21 +217,21 @@ jobs:
     # IMPACTO HABILIDADES
     # ============================================================
 
-    - name: Ejecutar Habilidades 2026 - Descargar
-      env:
-        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      run: python "etl/procesos/2026/11. Habilidades/01_descarga.py"
+    # - name: Ejecutar Habilidades 2026 - Descargar
+    #   env:
+    #     AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+    #     AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+    #     AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    #   run: python "etl/procesos/2026/11. Habilidades/01_descarga.py"
 
-    - name: Ejecutar Habilidades 2026 - Transformacion
-      run: python "etl/procesos/2026/11. Habilidades/02_transformacion.py"
+    # - name: Ejecutar Habilidades 2026 - Transformacion
+    #   run: python "etl/procesos/2026/11. Habilidades/02_transformacion.py"
 
-    - name: Ejecutar Consolidacion - Habilidades
-      run: python "etl/procesos/consolidacion/11_habilidades.py"
+    # - name: Ejecutar Consolidacion - Habilidades
+    #   run: python "etl/procesos/consolidacion/11_habilidades.py"
 
-    - name: Ejecutar carga a Salesforce - Habilidades
-      run: python "etl/procesos/carga/11_habilidades.py"
+    # - name: Ejecutar carga a Salesforce - Habilidades
+    #   run: python "etl/procesos/carga/11_habilidades.py"
 
     # ============================================================
     # ARTEFACTOS
