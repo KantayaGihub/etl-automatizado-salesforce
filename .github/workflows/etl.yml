@@ -83,21 +83,21 @@ jobs:
     # CALIFICACIONES AREA COMPETENCIA
     # ============================================================
 
-    - name: Ejecutar Calificaciones 2026 - Descargar
-      env:
-        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-      run: python "etl/procesos/2026/4. calificaciones_area_competencia/01_descarga.py"
+    #- name: Ejecutar Calificaciones 2026 - Descargar
+     # env:
+     #   AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+     #   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+     #   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+     # run: python "etl/procesos/2026/4. calificaciones_area_competencia/01_descarga.py"
 
-    - name: Ejecutar Calificaciones 2026 - Transformacion
-      run: python "etl/procesos/2026/4. calificaciones_area_competencia/02_transformacion.py"
+    #- name: Ejecutar Calificaciones 2026 - Transformacion
+      #run: python "etl/procesos/2026/4. calificaciones_area_competencia/02_transformacion.py"
 
-    - name: Ejecutar Consolidacion - Calificaciones
-      run: python "etl/procesos/consolidacion/4_calificaciones_area_competencia.py"
+    #- name: Ejecutar Consolidacion - Calificaciones
+     # run: python "etl/procesos/consolidacion/4_calificaciones_area_competencia.py"
 
-    - name: Ejecutar carga a Salesforce - Calificaciones
-      run: python "etl/procesos/carga/04_calificaciones_area_competencias.py"
+    #- name: Ejecutar carga a Salesforce - Calificaciones
+     # run: python "etl/procesos/carga/04_calificaciones_area_competencias.py"
 
     # ============================================================
     # ENCUESTA SATISFACCION PADRES
