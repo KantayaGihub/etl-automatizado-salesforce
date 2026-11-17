@@ -101,6 +101,15 @@ def validar_registros(registros, campos):
 
 def preparar(sf, objeto, dataframe):
     """Solo lectura remota y salida local. Nunca borra ni inserta registros."""
+    try:
+        return _preparar(sf, objeto, dataframe)
+    except ValueError as error:
+        mensaje = str(error).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        print(f"::error title=Prevalidación de {objeto}::{mensaje}", flush=True)
+        raise
+
+
+def _preparar(sf, objeto, dataframe):
     if objeto not in OBJETOS:
         raise ValueError("Objeto fuera de la lista de cargas")
     if dataframe.empty:

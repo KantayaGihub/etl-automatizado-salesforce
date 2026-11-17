@@ -1,6 +1,8 @@
 import ast
+import contextlib
 from copy import deepcopy
 import gzip
+import io
 import importlib.util
 import json
 import os
@@ -123,6 +125,14 @@ class CargaSeguraTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             segura.preparar(self.sf, OBJETO, pd.DataFrame([[1, 2]], columns=["Valor__c", "Valor__c"]))
         self.assertFalse(segura.PREPARADOS.exists())
+
+    def test_rechazo_publica_motivo_sin_imprimir_valores(self):
+        salida = io.StringIO()
+        with contextlib.redirect_stdout(salida), self.assertRaises(ValueError):
+            segura.preparar(self.sf, OBJETO, pd.DataFrame({"CampoIncorrecto__c": ["valor-privado"]}))
+        self.assertIn("::error", salida.getvalue())
+        self.assertIn("CampoIncorrecto__c", salida.getvalue())
+        self.assertNotIn("valor-privado", salida.getvalue())
 
     def test_valida_tipos_fecha_y_opciones_antes_del_borrado(self):
         for tipo, valor in (("double", "test 4"), ("int", "1.5"), ("date", "ayer"), ("boolean", "si")):
