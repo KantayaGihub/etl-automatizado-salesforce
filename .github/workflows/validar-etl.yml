@@ -1,0 +1,376 @@
+name: Validar ETL 2025 y 2026 sin Salesforce
+
+on:
+  push:
+    branches: [Fixing-etl-rc]
+    paths:
+      - .github/workflows/validar-etl.yml
+      - .github/workflows/etl.yml
+      - etl/**
+      - scripts/resumir_validacion.py
+      - tests/**
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Instalar dependencias
+        run: python -m pip install -r requirements.txt
+      - name: Verificar cambios sin servicios externos
+        run: python -m unittest discover -s tests -v
+
+      - name: Ejecutar Asistencia Regular 2025 - Descargar
+        id: paso_01
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2025/1. asistencia_regular/01_descargar.py"
+
+      - name: Ejecutar Asistencia Regular 2025 - Transformacion
+        id: paso_02
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/1. asistencia_regular/02_transformacion.py"
+
+      - name: Ejecutar Asistencia Regular 2026 - Descargar
+        id: paso_03
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2026/1. asistencia_regular/01_descargar.py"
+
+      - name: Ejecutar Asistencia Regular 2026 - Transformacion
+        id: paso_04
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/1. asistencia_regular/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Asistencia Regular
+        id: paso_05
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/1_asistencia_regular.py"
+
+      - name: Ejecutar Extracurriculares 2025 - Descargar
+        id: paso_06
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2025/2. asistencia_extracurricular/01_descarga.py"
+
+      - name: Ejecutar Extracurriculares 2025 - Transformacion
+        id: paso_07
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/2. asistencia_extracurricular/02_transformacion.py"
+
+      - name: Ejecutar Extracurriculares 2026 - Descargar
+        id: paso_08
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2026/2. asistencia_extracurricular/01_descarga.py"
+
+      - name: Ejecutar Extracurriculares 2026 - Transformacion
+        id: paso_09
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/2. asistencia_extracurricular/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Extracurriculares
+        id: paso_10
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/2_asistencia_extracurricular.py"
+
+      - name: Ejecutar Matricula 2025 - Descargar
+        id: paso_11
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2025/3. matricula/01_descarga.py"
+
+      - name: Ejecutar Matricula 2025 - Transformacion
+        id: paso_12
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/3. matricula/02_transformacion.py"
+
+      - name: Ejecutar Matricula 2026 - Descargar
+        id: paso_13
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2026/3. matricula/01_descarga.py"
+
+      - name: Ejecutar Matricula 2026 - Transformacion
+        id: paso_14
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/3. matricula/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Matricula
+        id: paso_15
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/3_matricula.py"
+
+      - name: Ejecutar Ficha Social 2025 - Descargar
+        id: paso_16
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2025/6. ficha_social/01_descargar.py"
+
+      - name: Ejecutar Ficha Social 2025 - Transformacion
+        id: paso_17
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/6. ficha_social/02_transformacion.py"
+
+      - name: Ejecutar Ficha Social 2026 - Descargar
+        id: paso_18
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2026/6. ficha_social/01_descargar.py"
+
+      - name: Ejecutar Ficha Social 2026 - Transformacion
+        id: paso_19
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/6. ficha_social/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Ficha Social
+        id: paso_20
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/6_ficha_social.py"
+
+      - name: Ejecutar Progreso Curricular 2025 - Descargar
+        id: paso_21
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2025/7. progreso_curricular/01_descarga.py"
+
+      - name: Ejecutar Progreso Curricular 2025 - Transformacion
+        id: paso_22
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/7. progreso_curricular/02_transformacion.py"
+
+      - name: Ejecutar Progreso Curricular 2026 - Descargar
+        id: paso_23
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2026/7. progreso_curricular/01_descarga.py"
+
+      - name: Ejecutar Progreso Curricular 2026 - Transformacion
+        id: paso_24
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/7. progreso_curricular/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Progreso Curricular
+        id: paso_25
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
+
+      - name: Ejecutar Solicitud Matricula 2025 - Descargar
+        id: paso_26
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2025/8. solicitud_matricula/01_descargar.py"
+
+      - name: Ejecutar Solicitud Matricula 2025 - Transformacion
+        id: paso_27
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/8. solicitud_matricula/02_transformacion.py"
+
+      - name: Ejecutar Solicitud Matricula 2026 - Descargar
+        id: paso_28
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python "etl/procesos/2026/8. solicitud_matricula/01_descargar.py"
+
+      - name: Ejecutar Solicitud Matricula 2026 - Transformacion
+        id: paso_29
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/8. solicitud_matricula/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Solicitud Matricula
+        id: paso_30
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/8_solicitud_matricula.py"
+
+      - name: Ejecutar Horario Regular 2025 - Descargar
+        id: paso_31
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2025/9. Horario regular/01_descarga.py"
+
+      - name: Ejecutar Horario Regular 2025 - Transformacion
+        id: paso_32
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/9. Horario regular/02_transformacion.py"
+
+      - name: Ejecutar Horario Regular 2026 - Descargar
+        id: paso_33
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2026/9. Horario regular/01_descarga.py"
+
+      - name: Ejecutar Horario Regular 2026 - Transformacion
+        id: paso_34
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/9. Horario regular/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Horario Regular
+        id: paso_35
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/9_horario_regular.py"
+
+      - name: Ejecutar Asistencia Actividades Vivenciales 2025 - Descargar
+        id: paso_36
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/01_descarga.py"
+
+      - name: Ejecutar Asistencia Actividades Vivenciales 2025 - Transformacion
+        id: paso_37
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/10. Asistencia Actividades Vivenciales/02_transformacion.py"
+
+      - name: Ejecutar Asistencia Actividades Vivenciales 2026 - Descargar
+        id: paso_38
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2026/10. Asistencia Actividades Vivenciales/01_descarga.py"
+
+      - name: Ejecutar Asistencia Actividades Vivenciales 2026 - Transformacion
+        id: paso_39
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/10. Asistencia Actividades Vivenciales/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Asistencia Actividades Vivenciales
+        id: paso_40
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/10_asistencia_act_vivenciales.py"
+
+      - name: Ejecutar Habilidades 2025 - Descargar
+        id: paso_41
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2025/11. Habilidades/01_descarga.py"
+
+      - name: Ejecutar Habilidades 2025 - Transformacion
+        id: paso_42
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2025/11. Habilidades/02_transformacion.py"
+
+      - name: Ejecutar Habilidades 2026 - Descargar
+        id: paso_43
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python "etl/procesos/2026/11. Habilidades/01_descarga.py"
+
+      - name: Ejecutar Habilidades 2026 - Transformacion
+        id: paso_44
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/2026/11. Habilidades/02_transformacion.py"
+
+      - name: Ejecutar Consolidacion - Habilidades
+        id: paso_45
+        continue-on-error: true
+        timeout-minutes: 4
+        run: python "etl/procesos/consolidacion/11_habilidades.py"
+
+      - name: Resumir resultados
+        id: resumen
+        if: ${{ always() }}
+        env:
+          PASOS_JSON: ${{ toJSON(steps) }}
+        run: |
+          python scripts/resumir_validacion.py
+          cat resultados-validacion/resumen.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar fuentes, salidas e informes
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: validacion-etl-2025-2026-${{ github.run_number }}-${{ github.run_attempt }}
+          path: |
+            data/
+            resultados-validacion/
+          if-no-files-found: warn
+          retention-days: 1
+
+      - name: Marcar errores despues de guardar resultados
+        if: ${{ always() && (steps.resumen.outcome != 'success' || steps.resumen.outputs.con_errores == 'true') }}
+        run: exit 1

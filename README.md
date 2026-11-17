@@ -121,3 +121,21 @@ pip install -r requirements.txt
 ```
 
 ---
+
+## Validar ambos años sin cargar a Salesforce
+
+En la rama `Fixing-etl-rc`, el workflow **Validar ETL 2025 y 2026 sin Salesforce**
+se activa con cambios en el ETL, sus pruebas o el workflow de validación.
+Ejecuta las descargas, transformaciones y consolidaciones de los nueve procesos
+activos de `etl.yml`; no ejecuta los scripts de `carga/` ni recibe secrets `SF_*`.
+Continúa con las demás etapas si alguna falla, para recoger evidencia de todos
+los procesos. Los estados de los pasos y las cantidades de filas quedan en
+`resultados-validacion/resumen.md` y `resumen.json`.
+
+En la ejecución de Actions, descarga el artefacto
+`validacion-etl-2025-2026-<ejecución>-<intento>`, disponible durante un día.
+Contiene `data/` con fuentes, archivos procesados y consolidados, además de los
+informes. La subida se intenta incluso si hubo errores; el resultado final se
+marca como fallido si un paso falla o se detectan salidas vacías o ilegibles.
+Un resultado correcto no certifica la calidad de las filas ni autoriza su carga
+a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
