@@ -14,6 +14,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import yaml
+from salesforce_bulk.salesforce_bulk import UploadResult
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -176,6 +177,13 @@ class CargaSeguraTests(unittest.TestCase):
         informe = json.loads(segura.RESULTADOS.read_text())
         self.assertEqual(informe["jobs"][0]["job"], "insert")
         self.assertIn("abort", self.bulk.operaciones)
+
+    def test_conserva_errores_del_formato_real_del_sdk(self):
+        resultado = UploadResult("id", False, False, ["REQUIRED_FIELD_MISSING"])
+        with patch.object(self.bulk, "get_batch_results", return_value=[resultado]), self.assertRaises(RuntimeError):
+            segura.ejecutar_lotes(self.bulk, OBJETO, "insert", [{"Valor__c": "nuevo"}], {})
+        informe = json.loads(segura.RESULTADOS.read_text())
+        self.assertIn("REQUIRED_FIELD_MISSING", informe["resultados"][0]["errores"][0])
 
     def test_backup_guarda_campos_completos_ids_y_metadata_sin_modificar_salesforce(self):
         self.preparar_y_respaldar()

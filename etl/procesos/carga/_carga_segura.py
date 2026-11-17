@@ -231,7 +231,11 @@ def ejecutar_lotes(bulk, objeto, operacion, registros, informe, timeout=600):
             time.sleep(5)
         resultados = list(bulk.get_batch_results(batch, job))
         def valor(r, nombre):
-            return r.get(nombre) if isinstance(r, dict) else getattr(r, nombre, None)
+            if isinstance(r, dict):
+                return r.get(nombre, r.get("error") if nombre == "errors" else None)
+            if nombre == "errors":
+                return getattr(r, "errors", getattr(r, "error", None))
+            return getattr(r, nombre, None)
         correctos = [r for r in resultados if str(valor(r, "success")).lower() == "true"]
         informe.setdefault("resultados", []).append({
             "operacion": operacion, "objeto": objeto, "batch": batch,
