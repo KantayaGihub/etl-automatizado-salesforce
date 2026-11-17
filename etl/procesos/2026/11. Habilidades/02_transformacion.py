@@ -217,7 +217,13 @@ def transformar_hoja(
         "Nivel de logro Base":
             "Nivel_de_logro_Base",
 
+        "Nivel de logro Base (LB)":
+            "Nivel_de_logro_Base",
+
         "Nivel de logro Salida":
+            "Nivel_de_logro_Salida",
+
+        "Nivel de Logro Salida (LS)":
             "Nivel_de_logro_Salida",
 
     }
