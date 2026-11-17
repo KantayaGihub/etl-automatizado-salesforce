@@ -232,6 +232,7 @@ jobs:
 
     - name: Preparar y validar registros - Asistencia Regular
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -239,6 +240,7 @@ jobs:
 
     - name: Preparar y validar registros - Extracurriculares
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -246,6 +248,7 @@ jobs:
 
     - name: Preparar y validar registros - Matricula
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -253,6 +256,7 @@ jobs:
 
     - name: Preparar y validar registros - Ficha Social
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -260,6 +264,7 @@ jobs:
 
     - name: Preparar y validar registros - Progreso Curricular
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -267,6 +272,7 @@ jobs:
 
     - name: Preparar y validar registros - Solicitud Matricula
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -274,6 +280,7 @@ jobs:
 
     - name: Preparar y validar registros - Horario Regular
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -281,6 +288,7 @@ jobs:
 
     - name: Preparar y validar registros - Asistencia Actividades Vivenciales
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}
@@ -288,6 +296,7 @@ jobs:
 
     - name: Preparar y validar registros - Habilidades
       env:
+        ETL_PUBLICAR_ERRORES: "true"
         SF_USERNAME: ${{ secrets.SF_USERNAME }}
         SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
         SF_SECURITY_TOKEN: ${{ secrets.SF_SECURITY_TOKEN }}

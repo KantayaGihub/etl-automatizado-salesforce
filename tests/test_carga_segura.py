@@ -128,11 +128,19 @@ class CargaSeguraTests(unittest.TestCase):
 
     def test_rechazo_publica_motivo_sin_imprimir_valores(self):
         salida = io.StringIO()
-        with contextlib.redirect_stdout(salida), self.assertRaises(ValueError):
+        with patch.dict("os.environ", {"ETL_PUBLICAR_ERRORES": "true"}), \
+                contextlib.redirect_stdout(salida), self.assertRaises(ValueError):
             segura.preparar(self.sf, OBJETO, pd.DataFrame({"CampoIncorrecto__c": ["valor-privado"]}))
         self.assertIn("::error", salida.getvalue())
         self.assertIn("CampoIncorrecto__c", salida.getvalue())
         self.assertNotIn("valor-privado", salida.getvalue())
+
+    def test_los_errores_simulados_no_publican_anotaciones_por_defecto(self):
+        salida = io.StringIO()
+        with patch.dict("os.environ", {"ETL_PUBLICAR_ERRORES": ""}), \
+                contextlib.redirect_stdout(salida), self.assertRaises(ValueError):
+            segura.preparar(self.sf, OBJETO, pd.DataFrame({"CampoIncorrecto__c": ["simulado"]}))
+        self.assertNotIn("::error", salida.getvalue())
 
     def test_valida_tipos_fecha_y_opciones_antes_del_borrado(self):
         for tipo, valor in (("double", "test 4"), ("int", "1.5"), ("date", "ayer"), ("boolean", "si")):

@@ -105,7 +105,8 @@ def preparar(sf, objeto, dataframe):
         return _preparar(sf, objeto, dataframe)
     except ValueError as error:
         mensaje = str(error).replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-        print(f"::error title=Prevalidación de {objeto}::{mensaje}", flush=True)
+        if os.getenv("ETL_PUBLICAR_ERRORES") == "true":
+            print(f"::error title=Prevalidación de {objeto}::{mensaje}", flush=True)
         raise
 
 
