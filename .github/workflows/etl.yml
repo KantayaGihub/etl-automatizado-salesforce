@@ -1,8 +1,7 @@
 name: ETL-Automatico-Salesforce
 
 on:
-  schedule:
-  - cron: "0 13,17,21,23 * * 1-5"
+  # Programación pausada durante la migración a cargas con backup y validación.
   workflow_dispatch:
 
 jobs:
