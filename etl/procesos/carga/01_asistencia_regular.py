@@ -1,29 +1,18 @@
+from _carga_segura import preparar
 import os
-import time
-import json
-from io import BytesIO
 
 import numpy as np
 import pandas as pd
 from simple_salesforce import Salesforce
-from salesforce_bulk import SalesforceBulk
-from salesforce_bulk.util import IteratorBytesIO
 
 
 print("================================================")
-print("=== ETL CARGA SALESFORCE - ASISTENCIA REGULAR ===")
+print("=== ETL PREPARACION SALESFORCE - ASISTENCIA REGULAR ===")
 print("================================================")
 
 
 OBJECT_NAME = "Asistencias_e7__c"
 RUTA_CONSOLIDADO = "data/consolidated/asistencia_regular/asistencias_consolidado_kantaya.csv"
-DELETE_BATCH_SIZE = 10000
-INSERT_BATCH_SIZE = 1000
-
-
-def wait_for_batch(bulk_client, job_id, batch_id):
-    while not bulk_client.is_batch_done(batch_id, job_id):
-        time.sleep(5)
 
 
 print("\n=== VALIDANDO VARIABLES DE ENTORNO ===")
@@ -51,47 +40,8 @@ sf = Salesforce(
     domain="login"
 )
 
-bulk = SalesforceBulk(
-    username=SF_USERNAME,
-    password=SF_PASSWORD,
-    security_token=SF_SECURITY_TOKEN,
-    sandbox=False
-)
 
 print("Conexion Salesforce OK")
-
-
-print("\n=== ELIMINANDO REGISTROS PREVIOS ===")
-
-query = f"SELECT Id FROM {OBJECT_NAME}"
-records_delete = sf.query_all(query)["records"]
-
-if not records_delete:
-    print("No existen registros previos")
-else:
-    ids = [{"Id": r["Id"]} for r in records_delete]
-    print(f"Registros encontrados para eliminar: {len(ids):,}")
-
-    delete_job = bulk.create_delete_job(OBJECT_NAME, contentType="JSON")
-    delete_batches = []
-
-    for i in range(0, len(ids), DELETE_BATCH_SIZE):
-        batch_records = ids[i:i + DELETE_BATCH_SIZE]
-        json_bytes = json.dumps(batch_records).encode("utf-8")
-        batch_id = bulk.post_batch(
-            delete_job,
-            IteratorBytesIO(iter([json_bytes]))
-        )
-        delete_batches.append(batch_id)
-        print(f"Batch delete enviado {i // DELETE_BATCH_SIZE + 1}")
-
-    bulk.close_job(delete_job)
-
-    print("Esperando finalizacion de eliminaciones...")
-    for batch_id in delete_batches:
-        wait_for_batch(bulk, delete_job, batch_id)
-
-    print("Eliminacion completada")
 
 
 print("\n=== CARGANDO CONSOLIDADO ===")
@@ -143,24 +93,4 @@ Asistencias.columns = [col + "__c" for col in Asistencias.columns]
 print(f"Campos finales: {len(Asistencias.columns)}")
 
 
-print("\n=== ENVIANDO A SALESFORCE BULK API ===")
-
-records = Asistencias.to_dict('records')
-print(f"Registros a insertar: {len(records):,}")
-
-insert_job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
-
-for i in range(0, len(records), INSERT_BATCH_SIZE):
-    batch_records = records[i:i + INSERT_BATCH_SIZE]
-    json_data = json.dumps(
-        batch_records,
-        ensure_ascii=False,
-        allow_nan=False
-    )
-    batch_io = BytesIO(json_data.encode('utf-8'))
-    bulk.post_batch(insert_job, batch_io)
-    print(f"Lote {i // INSERT_BATCH_SIZE + 1} enviado ({len(batch_records)} registros)")
-
-bulk.close_job(insert_job)
-
-print("\nProceso enviado a Salesforce correctamente")
+preparar(sf, OBJECT_NAME, Asistencias)
