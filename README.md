@@ -49,7 +49,7 @@ Google Drive / SharePoint
 Los scripts individuales de `carga/` ahora solo preparan y validan los registros
 contra la metadata de Salesforce, sin borrar ni insertar. Guardan JSON en
 `data/prepared/`. El coordinador `_carga_segura.py` realiza el reemplazo únicamente
-después de comprobar un respaldo completo y su subida a GitHub.
+después de validar todos los registros preparados. No genera backup de Salesforce.
 
 ---
 
@@ -80,13 +80,13 @@ después de comprobar un respaldo completo y su subida a GitHub.
 ## Automatizacion
 
 La programación automática está pausada durante la primera carga protegida.
-El workflow habitual se inicia manualmente. Por defecto solo prepara y respalda;
+El workflow habitual se inicia manualmente. Por defecto solo prepara y valida;
 la opción `cargar_salesforce` permite el reemplazo exclusivamente desde `main`.
-En `Fixing-etl-rc`, los cambios de la protección ejecutan preparación y respaldo,
+En `Fixing-etl-rc`, los cambios de la protección ejecutan preparación y validación,
 pero nunca el job de carga.
 
 Los artefactos generados se eliminan automaticamente despues de 1 dia para evitar saturacion de almacenamiento.
-Los respaldos de Salesforce y resultados de carga se conservan 7 días.
+Los informes de resultados de carga se conservan 7 días; no contienen un backup de Salesforce.
 
 ---
 
@@ -162,42 +162,26 @@ marca como fallido si un paso falla o se detectan salidas vacías o ilegibles.
 Un resultado correcto no certifica la calidad de las filas ni autoriza su carga
 a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 
-## Carga protegida, respaldo y recuperación
+## Carga validada sin backup
 
 `ETL-Automatico-Salesforce` ejecuta en este orden:
 
-1. Descarga, transforma y consolida todos los procesos activos de ambos años.
-2. Prepara todos los registros; rechaza archivos vacíos, columnas duplicadas,
-   campos desconocidos/no insertables, valores obligatorios ausentes, longitudes
-   excedidas y tipos básicos inválidos según la metadata de Salesforce.
-3. Exporta los registros actuales completos, sus IDs y metadata de los objetos
-   que se reemplazarían. Guarda `backups/salesforce/*.json.gz` y `manifest.json`.
-4. Sube el artefacto `salesforce-backup-<run_id>-<intento>`. Si falla su subida,
-   el job de carga no puede comenzar. Los JSON preparados se guardan aparte.
-5. Solo si se pidió carga manual desde `main`, recupera esos mismos archivos y
-   verifica organización, ejecución/intento, antigüedad (máximo 2 horas), hashes,
-   schema actual e IDs/SystemModstamp de Salesforce antes de borrar.
-6. Espera los resultados de cada lote de delete e insert y comprueba los IDs
-   finales. Un lote parcialmente rechazado marca error. Los resultados e IDs
-   insertados quedan en `data/load-results.json`, subido incluso ante fallo.
+1. Descarga, transforma y prepara los archivos finales de los procesos activos.
+2. Valida los registros contra la metadata de Salesforce y guarda JSON preparados.
+   Rechaza vacíos, columnas duplicadas, campos desconocidos (salvo las dos edades
+   autorizadas de Solicitud Matrícula), tipos inválidos y requisitos incumplidos.
+3. Guarda los archivos preparados como artefactos de esta ejecución.
+4. Solo con carga manual habilitada desde `main`, recupera esos JSON y vuelve a
+   validar todos los objetos antes de realizar cualquier escritura.
+5. Consulta los IDs actuales para reemplazar los registros. No exporta sus datos
+   ni genera, sube o requiere un backup de Salesforce.
+6. Espera los resultados de cada lote y verifica los IDs finales. Los errores e
+   IDs insertados se guardan en `data/load-results.json`, subido incluso ante fallo.
 
-La concurrencia del workflow permite una sola ejecución a la vez y no cancela
-una carga en curso. No protege contra otros sistemas o usuarios que escriban
-directamente en Salesforce durante el reemplazo. Las reglas de validación,
-triggers y permisos del servidor pueden rechazar registros aunque pasen las
-comprobaciones previas; el reemplazo de varios objetos no es una transacción
-única y no hay restauración automática.
-
-Si falla una carga, no la repitas a ciegas. Conserva los artefactos de respaldo
-y resultados, y revisa los jobs/lotes identificados en el informe. El backup
-incluye campos de solo lectura para diagnóstico: no se debe insertar su JSON
-sin seleccionar campos escribibles. El borrado es el delete normal de Bulk API,
-no hard delete. Un administrador debe evaluar la recuperación desde la papelera
-para conservar IDs, o reconstruir registros y relaciones a partir del respaldo.
-Reinsertar registros puede generar IDs nuevos. Revertir Git no restaura datos.
-Descarga el backup antes de que venza su retención y protégelo como los datos
-personales de Salesforce que contiene.
-
-Para repetir una operación fallida, usa **Re-run all jobs**: así se obtienen
-preparados y un backup nuevos. No se permite cargar con un respaldo de otro
-intento ni con archivos preparados modificados.
+Solicitud Matrícula con las edades legadas se inserta y verifica antes de borrar
+sus registros anteriores. Los demás objetos mantienen el orden de borrar e insertar.
+La concurrencia permite una ejecución a la vez y no cancela una carga en curso.
+El reemplazo de varios objetos no es una transacción única ni tiene restauración
+automática. Si falla, se conservan los informes de lotes, no una copia de los datos
+anteriores. Volver a ejecutar `main` carga las fuentes disponibles en ese momento;
+revertir un commit de Git no restaura el estado anterior de Salesforce.

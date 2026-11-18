@@ -1,7 +1,6 @@
 import ast
 import contextlib
 from copy import deepcopy
-import gzip
 import io
 import importlib.util
 import json
@@ -93,7 +92,6 @@ class CargaSeguraTests(unittest.TestCase):
         objeto = "Formulario_SolicitudMatricula_e__c"
         registros = pd.DataFrame({"Valor__c": ["nuevo"], "Edad actual": [10], "Edad de ingreso": [7]})
         segura.preparar(self.sf, objeto, registros)
-        segura.respaldar(self.sf)
         return objeto
 
     def test_edades_legadas_se_conservan_en_el_preparado_con_aviso(self):
@@ -134,10 +132,7 @@ class CargaSeguraTests(unittest.TestCase):
         raiz = Path(self.tmp.name)
         self.parches = [
             patch.object(segura, "PREPARADOS", raiz / "prepared"),
-            patch.object(segura, "BACKUP", raiz / "backup"),
             patch.object(segura, "RESULTADOS", raiz / "resultados.json"),
-            patch.dict("os.environ", {"GITHUB_RUN_ID": "1", "GITHUB_RUN_ATTEMPT": "1",
-                                      "ETL_BACKUP_ARTIFACT_ID": "123"}),
         ]
         for parche in self.parches:
             parche.start()
@@ -149,9 +144,8 @@ class CargaSeguraTests(unittest.TestCase):
             parche.stop()
         self.tmp.cleanup()
 
-    def preparar_y_respaldar(self):
+    def preparar_registros(self):
         segura.preparar(self.sf, OBJETO, pd.DataFrame({"Valor__c": ["nuevo"]}))
-        segura.respaldar(self.sf)
 
     def test_no_prepara_vacios_nan_campos_desconocidos_o_requeridos_ausentes(self):
         casos = [[], [{"Valor__c": float("nan")}], [{"Otro__c": "x"}], [{"Valor__c": None}],
@@ -192,20 +186,14 @@ class CargaSeguraTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             segura.validar_registros([{"Valor__c": "B"}], campos)
 
-    def test_backup_corrupto_no_borra(self):
-        self.preparar_y_respaldar()
-        (segura.BACKUP / f"{OBJETO}.json.gz").write_bytes(b"corrupto")
-        with self.assertRaises(ValueError):
-            segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, [])
 
-    def test_todos_los_objetos_se_validan_antes_de_respaldar(self):
+    def test_todos_los_objetos_se_validan_antes_de_cargar(self):
         segura.preparar(self.sf, OBJETO, pd.DataFrame({"Valor__c": ["nuevo"]}))
         otro = "Asistencias_e7__c"
         segura.guardar_json(segura.PREPARADOS / f"{otro}.json", {"objeto": otro, "registros": []})
         with self.assertRaises(ValueError):
-            segura.respaldar(self.sf)
-        self.assertFalse((segura.BACKUP / "manifest.json").exists())
+            segura.cargar(self.sf, self.bulk)
+        self.assertEqual(self.bulk.operaciones, [])
 
     def test_script_original_de_horario_prepara_sin_consultar_ids_ni_borrar(self):
         # Ejecutar un adaptador real con CSV sintético y SDK de solo lectura simulado.
@@ -243,60 +231,35 @@ class CargaSeguraTests(unittest.TestCase):
         informe = json.loads(segura.RESULTADOS.read_text())
         self.assertIn("REQUIRED_FIELD_MISSING", informe["resultados"][0]["errores"][0])
 
-    def test_backup_guarda_campos_completos_ids_y_metadata_sin_modificar_salesforce(self):
-        self.preparar_y_respaldar()
-        with gzip.open(segura.BACKUP / f"{OBJETO}.json.gz", "rt", encoding="utf-8") as f:
-            copia = json.load(f)
-        self.assertEqual(copia["registros"], self.sf.registros)
-        self.assertEqual(copia["descripcion"]["fields"], self.sf.campos)
-        self.assertEqual(self.sf.registros[0]["Id"], "anterior")
 
-    def test_sin_confirmacion_de_artefacto_no_borra(self):
-        self.preparar_y_respaldar()
-        with patch.dict("os.environ", {"ETL_BACKUP_ARTIFACT_ID": ""}), self.assertRaises(ValueError):
-            segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, [])
-
-    def test_preparado_modificado_despues_del_backup_no_borra(self):
-        self.preparar_y_respaldar()
+    def test_preparado_vacio_no_borra(self):
+        self.preparar_registros()
         segura.guardar_json(segura.PREPARADOS / f"{OBJETO}.json", {"objeto": OBJETO, "registros": []})
         with self.assertRaises(ValueError):
             segura.cargar(self.sf, self.bulk)
         self.assertEqual(self.bulk.operaciones, [])
 
-    def test_cambios_remotos_desde_el_backup_no_borra(self):
-        self.preparar_y_respaldar()
-        self.sf.registros[0]["SystemModstamp"] = "cambio-externo"
-        with self.assertRaises(ValueError):
-            segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, [])
-
-    def test_backup_de_otro_intento_no_borra(self):
-        self.preparar_y_respaldar()
-        with patch.dict("os.environ", {"GITHUB_RUN_ATTEMPT": "2"}), self.assertRaises(ValueError):
-            segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, [])
 
     def test_delete_fallido_no_inicia_insert_y_guarda_informe(self):
-        self.preparar_y_respaldar()
+        self.preparar_registros()
         self.bulk.falla = "delete"
         with self.assertRaises(RuntimeError):
             segura.cargar(self.sf, self.bulk)
         self.assertEqual(self.bulk.operaciones, ["delete"])
         self.assertEqual(json.loads(segura.RESULTADOS.read_text())["estado"], "error")
-        self.assertTrue((segura.BACKUP / "manifest.json").exists())
 
     def test_insert_fallido_no_se_reporta_como_exitoso(self):
-        self.preparar_y_respaldar()
+        self.preparar_registros()
         self.bulk.falla = "insert"
         with self.assertRaises(RuntimeError):
             segura.cargar(self.sf, self.bulk)
         self.assertEqual(json.loads(segura.RESULTADOS.read_text())["estado"], "error")
-        self.assertTrue((segura.BACKUP / f"{OBJETO}.json.gz").exists())
 
     def test_carga_correcta_espera_resultados_y_verifica_ids_finales(self):
-        self.preparar_y_respaldar()
-        segura.cargar(self.sf, self.bulk)
+        self.preparar_registros()
+        with patch.object(self.sf, "query_all", wraps=self.sf.query_all) as consultas:
+            segura.cargar(self.sf, self.bulk)
+        self.assertTrue(all(c.args[0] == f"SELECT Id FROM {OBJETO}" for c in consultas.call_args_list))
         self.assertEqual(self.bulk.operaciones, ["delete", "insert"])
         self.assertEqual(self.sf.registros[0]["Valor__c"], "nuevo")
         self.assertEqual(json.loads(segura.RESULTADOS.read_text())["estado"], "completado")
@@ -320,6 +283,9 @@ class CargaSeguraTests(unittest.TestCase):
         self.assertEqual(w["jobs"]["cargar"]["needs"], "etl")
         self.assertIn("refs/heads/main", w["jobs"]["cargar"]["if"])
         self.assertIn("inputs.cargar_salesforce", w["jobs"]["cargar"]["if"])
+        self.assertNotIn("salesforce-backup-", json.dumps(w))
+        self.assertNotIn("ETL_BACKUP_ARTIFACT_ID", json.dumps(w))
+        self.assertNotIn("_carga_segura backup", json.dumps(w))
 
 
 if __name__ == "__main__":

@@ -1,15 +1,12 @@
-"""Preparación, respaldo y reemplazo explícito de datos de Salesforce."""
+"""Preparación y reemplazo explícito sin respaldo de datos de Salesforce."""
 
 import argparse
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-import gzip
-import hashlib
 from io import BytesIO
 import json
 import os
 from pathlib import Path
-import re
 import time
 
 import pandas as pd
@@ -18,7 +15,6 @@ from salesforce_bulk import SalesforceBulk
 
 
 PREPARADOS = Path("data/prepared")
-BACKUP = Path("backups/salesforce")
 RESULTADOS = Path("data/load-results.json")
 # Excepción explícita: conservar estos nombres originales en el envío de solicitud.
 CAMPOS_LEGADOS = {
@@ -38,10 +34,6 @@ def guardar_json(ruta, datos):
     temporal = ruta.with_suffix(ruta.suffix + ".tmp")
     temporal.write_text(json.dumps(datos, ensure_ascii=False, allow_nan=False), encoding="utf-8")
     temporal.replace(ruta)
-
-
-def huella(ruta):
-    return hashlib.sha256(Path(ruta).read_bytes()).hexdigest()
 
 
 def conectar():
@@ -155,76 +147,17 @@ def leer_preparados():
     return {objeto: preparados[objeto] for objeto in OBJETOS if objeto in preparados}
 
 
-def identificacion(sf):
-    return sf.query("SELECT Id FROM Organization LIMIT 1")["records"][0]["Id"]
-
-
-def respaldar(sf):
+def comprobar_preparados(sf):
     preparados = leer_preparados()
-    # Todos los registros de todos los objetos deben ser válidos antes del respaldo.
-    descripciones = {}
+    # Validar todos los objetos antes de crear cualquier job de escritura.
     for objeto, (_, registros) in preparados.items():
-        descripciones[objeto] = getattr(sf, objeto).describe()
-        validar_registros(registros, descripciones[objeto]["fields"], objeto)
-    manifiesto = {
-        "organizacion": identificacion(sf), "run_id": os.getenv("GITHUB_RUN_ID", "local"),
-        "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT", "local"),
-        "fecha": datetime.now(timezone.utc).isoformat(), "objetos": {},
-    }
-    for objeto, (ruta, _) in preparados.items():
-        descripcion = descripciones[objeto]
-        campos = [c["name"] for c in descripcion["fields"] if not c.get("deprecatedAndHidden")]
-        if any(not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", n) for n in campos):
-            raise ValueError("Nombre de campo inválido en metadata")
-        # query_all pagina todos los registros; no incluye la papelera por defecto.
-        registros = sf.query_all(f"SELECT {','.join(campos)} FROM {objeto}")["records"]
-        archivo = BACKUP / f"{objeto}.json.gz"
-        archivo.parent.mkdir(parents=True, exist_ok=True)
-        with gzip.open(archivo.with_suffix(".tmp"), "wt", encoding="utf-8") as salida:
-            json.dump({"objeto": objeto, "descripcion": descripcion, "registros": registros},
-                      salida, ensure_ascii=False, allow_nan=False)
-        archivo.with_suffix(".tmp").replace(archivo)
-        manifiesto["objetos"][objeto] = {
-            "archivo": archivo.name, "sha256": huella(archivo),
-            "preparado_sha256": huella(ruta), "filas": len(registros),
-        }
-        print(f"BACKUP {objeto}: {len(registros)} registros")
-    guardar_json(BACKUP / "manifest.json", manifiesto)
-
-
-def comprobar_respaldo(sf):
-    if not os.getenv("ETL_BACKUP_ARTIFACT_ID", "").isdigit():
-        raise ValueError("No hay confirmación de subida del backup a GitHub")
-    manifiesto = json.loads((BACKUP / "manifest.json").read_text(encoding="utf-8"))
-    if (manifiesto["run_id"] != os.getenv("GITHUB_RUN_ID")
-            or manifiesto["run_attempt"] != os.getenv("GITHUB_RUN_ATTEMPT")):
-        raise ValueError("El backup no pertenece a esta ejecución e intento")
-    edad = (datetime.now(timezone.utc) - datetime.fromisoformat(manifiesto["fecha"])).total_seconds()
-    if not 0 <= edad <= 7200:
-        raise ValueError("El backup venció; obtener uno nuevo")
-    if identificacion(sf) != manifiesto["organizacion"]:
-        raise ValueError("El backup pertenece a otra organización Salesforce")
-    preparados = leer_preparados()
-    if set(preparados) != set(manifiesto["objetos"]):
-        raise ValueError("Objetos preparados y respaldados diferentes")
-    snapshots = {}
-    for objeto, (ruta, registros) in preparados.items():
-        meta = manifiesto["objetos"][objeto]
-        archivo = BACKUP / f"{objeto}.json.gz"
-        if huella(archivo) != meta["sha256"] or huella(ruta) != meta["preparado_sha256"]:
-            raise ValueError("Se modificaron archivos después de respaldar")
-        with gzip.open(archivo, "rt", encoding="utf-8") as entrada:
-            snapshot = json.load(entrada)
-        if snapshot["objeto"] != objeto or len(snapshot["registros"]) != meta["filas"]:
-            raise ValueError("Contenido del backup inconsistente")
         validar_registros(registros, getattr(sf, objeto).describe()["fields"], objeto)
-        # Detectar altas, bajas o actualizaciones posteriores al snapshot.
-        actuales = sf.query_all(f"SELECT Id,SystemModstamp FROM {objeto}")["records"]
-        firma = lambda filas: {r["Id"]: r.get("SystemModstamp") for r in filas}
-        if firma(actuales) != firma(snapshot["registros"]):
-            raise ValueError(f"{objeto}: Salesforce cambió desde el backup; no se borrará")
-        snapshots[objeto] = snapshot["registros"]
-    return preparados, snapshots
+    # Solo IDs para el reemplazo; no se exportan registros ni se genera backup.
+    anteriores = {
+        objeto: sf.query_all(f"SELECT Id FROM {objeto}")["records"]
+        for objeto in preparados
+    }
+    return preparados, anteriores
 
 
 def ejecutar_lotes(bulk, objeto, operacion, registros, informe, timeout=600):
@@ -272,18 +205,18 @@ def ejecutar_lotes(bulk, objeto, operacion, registros, informe, timeout=600):
         })
         guardar_json(RESULTADOS, informe)
         if len(resultados) != esperados or len(correctos) != esperados:
-            raise RuntimeError(f"{objeto}: {operacion} incompleto; revisar lotes del informe y backup")
+            raise RuntimeError(f"{objeto}: {operacion} incompleto; revisar lotes del informe")
         ids.extend(valor(r, "id") for r in correctos)
     return ids
 
 
 def cargar(sf, bulk):
-    preparados, snapshots = comprobar_respaldo(sf)
+    preparados, existentes = comprobar_preparados(sf)
     informe = {"estado": "en curso", "objetos_completados": []}
     guardar_json(RESULTADOS, informe)
     try:
         for objeto, (_, registros) in preparados.items():
-            anteriores = snapshots[objeto]
+            anteriores = existentes[objeto]
             # Con campos legados, comprobar la inserción antes de borrar los datos anteriores.
             insertar_primero = any(CAMPOS_LEGADOS.get(objeto, set()) & set(r) for r in registros)
             if insertar_primero:
@@ -308,13 +241,10 @@ def cargar(sf, bulk):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operacion", choices=("backup", "cargar"))
+    parser.add_argument("operacion", choices=("cargar",))
     operacion = parser.parse_args().operacion
     sf = conectar()
-    if operacion == "backup":
-        respaldar(sf)
-    else:
-        # Se crea el cliente Bulk únicamente para la operación explícita de carga.
-        bulk = SalesforceBulk(username=os.environ["SF_USERNAME"], password=os.environ["SF_PASSWORD"],
-                              security_token=os.environ["SF_SECURITY_TOKEN"], sandbox=False)
-        cargar(sf, bulk)
+    # Solo se crea el cliente Bulk para la operación explícita de carga.
+    bulk = SalesforceBulk(username=os.environ["SF_USERNAME"], password=os.environ["SF_PASSWORD"],
+                          security_token=os.environ["SF_SECURITY_TOKEN"], sandbox=False)
+    cargar(sf, bulk)
