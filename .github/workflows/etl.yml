@@ -100,20 +100,12 @@ jobs:
     - name: Ejecutar Consolidacion - Matricula
       run: python "etl/procesos/consolidacion/3_matricula.py"
 
-    - name: Ejecutar Ficha Social 2025 - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python "etl/procesos/2025/6. ficha_social/01_descargar.py"
-
-    - name: Ejecutar Ficha Social 2025 - Transformacion
-      run: python "etl/procesos/2025/6. ficha_social/02_transformacion.py"
-
-    - name: Ejecutar Ficha Social 2026 - Descargar
+    - name: Ejecutar Ficha Social (fuente compartida) - Descargar
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
       run: python "etl/procesos/2026/6. ficha_social/01_descargar.py"
 
-    - name: Ejecutar Ficha Social 2026 - Transformacion
+    - name: Ejecutar Ficha Social (fuente compartida) - Transformacion
       run: python "etl/procesos/2026/6. ficha_social/02_transformacion.py"
 
     - name: Ejecutar Consolidacion - Ficha Social
@@ -142,20 +134,12 @@ jobs:
     - name: Ejecutar Consolidacion - Progreso Curricular
       run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
 
-    - name: Ejecutar Solicitud Matricula 2025 - Descargar
-      env:
-        GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-      run: python "etl/procesos/2025/8. solicitud_matricula/01_descargar.py"
-
-    - name: Ejecutar Solicitud Matricula 2025 - Transformacion
-      run: python "etl/procesos/2025/8. solicitud_matricula/02_transformacion.py"
-
-    - name: Ejecutar Solicitud Matricula 2026 - Descargar
+    - name: Ejecutar Solicitud Matricula (fuente compartida) - Descargar
       env:
         GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
       run: python "etl/procesos/2026/8. solicitud_matricula/01_descargar.py"
 
-    - name: Ejecutar Solicitud Matricula 2026 - Transformacion
+    - name: Ejecutar Solicitud Matricula (fuente compartida) - Transformacion
       run: python "etl/procesos/2026/8. solicitud_matricula/02_transformacion.py"
 
     - name: Ejecutar Consolidacion - Solicitud Matricula

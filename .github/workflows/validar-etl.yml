@@ -131,21 +131,7 @@ jobs:
         timeout-minutes: 4
         run: python "etl/procesos/consolidacion/3_matricula.py"
 
-      - name: Ejecutar Ficha Social 2025 - Descargar
-        id: paso_16
-        continue-on-error: true
-        timeout-minutes: 4
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-        run: python "etl/procesos/2025/6. ficha_social/01_descargar.py"
-
-      - name: Ejecutar Ficha Social 2025 - Transformacion
-        id: paso_17
-        continue-on-error: true
-        timeout-minutes: 4
-        run: python "etl/procesos/2025/6. ficha_social/02_transformacion.py"
-
-      - name: Ejecutar Ficha Social 2026 - Descargar
+      - name: Ejecutar Ficha Social (fuente compartida) - Descargar
         id: paso_18
         continue-on-error: true
         timeout-minutes: 4
@@ -153,7 +139,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: python "etl/procesos/2026/6. ficha_social/01_descargar.py"
 
-      - name: Ejecutar Ficha Social 2026 - Transformacion
+      - name: Ejecutar Ficha Social (fuente compartida) - Transformacion
         id: paso_19
         continue-on-error: true
         timeout-minutes: 4
@@ -203,21 +189,7 @@ jobs:
         timeout-minutes: 4
         run: python "etl/procesos/consolidacion/7_progreso_curricular.py"
 
-      - name: Ejecutar Solicitud Matricula 2025 - Descargar
-        id: paso_26
-        continue-on-error: true
-        timeout-minutes: 4
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-        run: python "etl/procesos/2025/8. solicitud_matricula/01_descargar.py"
-
-      - name: Ejecutar Solicitud Matricula 2025 - Transformacion
-        id: paso_27
-        continue-on-error: true
-        timeout-minutes: 4
-        run: python "etl/procesos/2025/8. solicitud_matricula/02_transformacion.py"
-
-      - name: Ejecutar Solicitud Matricula 2026 - Descargar
+      - name: Ejecutar Solicitud Matricula (fuente compartida) - Descargar
         id: paso_28
         continue-on-error: true
         timeout-minutes: 4
@@ -225,7 +197,7 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: python "etl/procesos/2026/8. solicitud_matricula/01_descargar.py"
 
-      - name: Ejecutar Solicitud Matricula 2026 - Transformacion
+      - name: Ejecutar Solicitud Matricula (fuente compartida) - Transformacion
         id: paso_29
         continue-on-error: true
         timeout-minutes: 4

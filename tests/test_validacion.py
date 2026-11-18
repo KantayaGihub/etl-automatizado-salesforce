@@ -26,7 +26,7 @@ class ValidacionTests(unittest.TestCase):
                      and "/carga/" not in s["run"]]
         pasos = validacion["jobs"]["validar"]["steps"]
         reales = [s for s in pasos if s.get("id", "").startswith("paso_")]
-        self.assertEqual(len(reales), 45)
+        self.assertEqual(len(reales), 41)
         self.assertEqual([s["run"] for s in reales], esperados)
         self.assertNotIn("SF_", str(validacion))
         for paso in reales:

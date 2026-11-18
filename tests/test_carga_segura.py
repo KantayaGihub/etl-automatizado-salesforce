@@ -274,7 +274,7 @@ class CargaSeguraTests(unittest.TestCase):
         pasos = w["jobs"]["etl"]["steps"]
         fuentes = [i for i, s in enumerate(pasos) if 'python "etl/procesos/' in s.get("run", "") and "/carga/" not in s["run"]]
         preparados = [i for i, s in enumerate(pasos) if '/carga/' in s.get("run", "")]
-        self.assertEqual(len(fuentes), 45)
+        self.assertEqual(len(fuentes), 41)
         self.assertEqual(len(preparados), 9)
         self.assertLess(max(fuentes), min(preparados))
         self.assertEqual(w["jobs"]["cargar"]["needs"], "etl")

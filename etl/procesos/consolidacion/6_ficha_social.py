@@ -4,44 +4,20 @@ import pandas as pd
 # ============================================================
 # CONFIG
 # ============================================================
-ARCHIVOS_POR_ANIO = {
-    "2025": Path("data/processed/2025/6.ficha_social/Ficha_Social_v2.xlsx"),
-    "2026": Path("data/processed/2026/6.ficha_social/Ficha_Social_v2.xlsx"),
-}
+ARCHIVO_FUENTE = Path("data/processed/2026/6.ficha_social/Ficha_Social_v2.xlsx")
 
 CARPETA_SALIDA = Path("data/consolidated/ficha_social")
 ARCHIVO_SALIDA = CARPETA_SALIDA / "Ficha_Social_v2.xlsx"
 
-
-def leer_excel_seguro(ruta: Path, anio: str) -> pd.DataFrame:
+def leer_excel_seguro(ruta: Path) -> pd.DataFrame:
     if not ruta.exists():
-        print(f"No se encontró archivo para {anio}: {ruta}")
+        print(f"No se encontró la fuente compartida: {ruta}")
         return pd.DataFrame()
 
-    print(f"Leyendo {anio}: {ruta}")
+    print(f"Leyendo fuente compartida: {ruta}")
     df = pd.read_excel(ruta, sheet_name="Ficha_Social_v2", dtype=str)
-    df["ANIO_FUENTE"] = anio
     print(f"-> {len(df)} filas")
     return df
-
-
-def homologar_columnas(dataframes):
-    todas_las_columnas = set()
-
-    for df in dataframes:
-        todas_las_columnas.update(df.columns)
-
-    todas_las_columnas = list(todas_las_columnas)
-
-    dfs_homologados = []
-    for df in dataframes:
-        for col in todas_las_columnas:
-            if col not in df.columns:
-                df[col] = None
-        df = df[todas_las_columnas]
-        dfs_homologados.append(df)
-
-    return dfs_homologados
 
 
 def codebook(df):
@@ -58,24 +34,14 @@ def codebook(df):
 
     return resumen.reset_index().rename(columns={"index": "Variable"})
 
-
 def main():
     print("=== CONSOLIDACIÓN FICHA SOCIAL ===")
 
-    dfs = []
-    for anio, ruta in ARCHIVOS_POR_ANIO.items():
-        df = leer_excel_seguro(ruta, anio)
-        if not df.empty:
-            dfs.append(df)
+    consolidado = leer_excel_seguro(ARCHIVO_FUENTE)
+    if consolidado.empty:
+        raise ValueError("La fuente compartida no contiene registros para preparar.")
 
-    if not dfs:
-        raise FileNotFoundError("No se encontró ninguna base procesada para consolidar.")
-
-    dfs = homologar_columnas(dfs)
-
-    consolidado = pd.concat(dfs, ignore_index=True)
-
-    print(f"Total concatenado: {len(consolidado)} filas")
+    print(f"Total preparado desde la fuente compartida: {len(consolidado)} filas")
 
     CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
 

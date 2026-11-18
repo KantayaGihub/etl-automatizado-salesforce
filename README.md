@@ -136,6 +136,11 @@ En la rama `Fixing-etl-rc`, el workflow **Validar ETL 2025 y 2026 sin Salesforce
 se activa con cambios en el ETL, sus pruebas o el workflow de validación.
 Ejecuta las descargas, transformaciones y consolidaciones de los nueve procesos
 activos de `etl.yml`; no ejecuta los scripts de `carga/` ni recibe secrets `SF_*`.
+Ficha Social y Solicitud Matrícula se descargan y transforman una sola vez:
+sus scripts de ambos años apuntan al mismo Google Sheets. Se reutilizan los
+scripts y rutas de trabajo de `2026`, sin filtrar por año. Sus preparadores
+finales leen únicamente esa copia, conservan las rutas finales de carga y no
+añaden `ANIO_FUENTE` a partir de la carpeta. Las copias de `2025` no se incorporan.
 Continúa con las demás etapas si alguna falla, para recoger evidencia de todos
 los procesos. Los estados de los pasos y las cantidades de filas quedan en
 `resultados-validacion/resumen.md` y `resumen.json`.
