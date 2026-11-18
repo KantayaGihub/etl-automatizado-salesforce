@@ -171,6 +171,31 @@ def nivel_orden(valor: str):
     return mapping.get(valor_norm)
 
 
+def homologar_encabezados_logro(df: pd.DataFrame) -> pd.DataFrame:
+    """Acepta los nombres originales y las variantes con LB/LS de 2026."""
+    df = df.copy()
+    for destino, sigla in (("Nivel de logro Base", "LB"), ("Nivel de logro Salida", "LS")):
+        nombres = {destino.casefold(), f"{destino} ({sigla})".casefold()}
+        columnas = [c for c in df.columns
+                    if " ".join(normalizar_texto(c).split()).casefold() in nombres]
+        if not columnas:
+            continue
+        if any(list(df.columns).count(c) > 1 for c in columnas):
+            raise ValueError(f"Hay encabezados duplicados de {destino}")
+        valores = df[columnas[0]].copy()
+        for columna in columnas[1:]:
+            otro = df[columna]
+            conflictos = valores.notna() & otro.notna() & valores.ne(otro).fillna(False)
+            if conflictos.any():
+                raise ValueError(
+                    f"Las columnas de {destino} discrepan en {int(conflictos.sum())} filas"
+                )
+            valores = valores.combine_first(otro)
+        df = df.drop(columns=columnas)
+        df[destino] = valores
+    return df
+
+
 def transformar_hoja(
     df: pd.DataFrame,
     habilidad_nombre: str
@@ -183,6 +208,7 @@ def transformar_hoja(
         normalizar_texto(c)
         for c in df.columns
     ]
+    df = homologar_encabezados_logro(df)
 
     rename_map = {
 
