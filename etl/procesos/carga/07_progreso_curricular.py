@@ -1,4 +1,5 @@
 from _carga_segura import preparar
+from _homologacion_columnas import unificar_columnas_equivalentes
 import os
 from pathlib import Path
 
@@ -102,6 +103,7 @@ Progreso_Curricular.columns = [
     col if str(col).endswith("__c") else f"{col}__c"
     for col in Progreso_Curricular.columns
 ]
+Progreso_Curricular = unificar_columnas_equivalentes(Progreso_Curricular)
 
 # ==========================================================
 # 6 Reemplazar nulos
