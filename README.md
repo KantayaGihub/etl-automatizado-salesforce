@@ -132,6 +132,15 @@ pip install -r requirements.txt
 
 ## Validar ambos años sin cargar a Salesforce
 
+Solicitud Matrícula conserva `Edad actual` y `Edad de ingreso` con sus nombres
+originales en el JSON destinado a Salesforce. Por excepción explícita, si esos
+dos campos no están homologados o no son insertables, la validación previa
+emite un aviso y continúa. Los demás campos mantienen la validación estricta.
+Esto no garantiza que Salesforce los acepte. Para ese envío, el coordinador
+inserta y comprueba todos los resultados antes de borrar los registros anteriores
+de Solicitud Matrícula. Un rechazo remoto sigue siendo un error; los registros
+anteriores permanecen y cualquier inserción parcial queda en el informe de lotes.
+
 En la rama `Fixing-etl-rc`, el workflow **Validar ETL 2025 y 2026 sin Salesforce**
 se activa con cambios en el ETL, sus pruebas o el workflow de validación.
 Ejecuta las descargas, transformaciones y consolidaciones de los nueve procesos

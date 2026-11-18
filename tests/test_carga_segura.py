@@ -89,6 +89,46 @@ class BulkSimulado:
 
 
 class CargaSeguraTests(unittest.TestCase):
+    def preparar_solicitud_legada(self):
+        objeto = "Formulario_SolicitudMatricula_e__c"
+        registros = pd.DataFrame({"Valor__c": ["nuevo"], "Edad actual": [10], "Edad de ingreso": [7]})
+        segura.preparar(self.sf, objeto, registros)
+        segura.respaldar(self.sf)
+        return objeto
+
+    def test_edades_legadas_se_conservan_en_el_preparado_con_aviso(self):
+        salida = io.StringIO()
+        with contextlib.redirect_stdout(salida):
+            objeto = self.preparar_solicitud_legada()
+        payload = json.loads((segura.PREPARADOS / f"{objeto}.json").read_text())
+        self.assertEqual(payload["registros"], [{"Valor__c": "nuevo", "Edad actual": 10, "Edad de ingreso": 7}])
+        self.assertIn("AVISO", salida.getvalue())
+        self.assertEqual(self.bulk.operaciones, [])
+
+    def test_excepcion_de_edades_no_se_extiende_a_otros_campos_u_objetos(self):
+        for objeto, campo in ((OBJETO, "Edad actual"),
+                              ("Formulario_SolicitudMatricula_e__c", "Otro desconocido")):
+            with self.subTest(objeto=objeto, campo=campo), self.assertRaises(ValueError):
+                segura.validar_registros([{"Valor__c": "nuevo", campo: 10}], self.sf.campos, objeto)
+
+    def test_rechazo_remoto_de_edades_se_reporta_sin_borrar_registros_anteriores(self):
+        self.preparar_solicitud_legada()
+        anteriores = deepcopy(self.sf.registros)
+        self.bulk.falla = "insert"
+        with self.assertRaises(RuntimeError):
+            segura.cargar(self.sf, self.bulk)
+        self.assertEqual(self.bulk.operaciones, ["insert"])
+        self.assertEqual(self.sf.registros, anteriores)
+        self.assertEqual(json.loads(segura.RESULTADOS.read_text())["estado"], "error")
+
+    def test_edades_se_envian_y_solo_tras_aceptarse_se_borran_los_anteriores(self):
+        self.preparar_solicitud_legada()
+        segura.cargar(self.sf, self.bulk)
+        self.assertEqual(self.bulk.operaciones, ["insert", "delete"])
+        self.assertEqual(len(self.sf.registros), 1)
+        self.assertEqual(self.sf.registros[0]["Edad actual"], 10)
+        self.assertEqual(self.sf.registros[0]["Edad de ingreso"], 7)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         raiz = Path(self.tmp.name)
