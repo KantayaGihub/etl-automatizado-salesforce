@@ -21,9 +21,10 @@ class FuentesCompartidasTests(unittest.TestCase):
                 with self.subTest(archivo=archivo, carpeta=carpeta):
                     for script in (descarga, "02_transformacion.py"):
                         self.assertEqual(sum(f"/{carpeta}/{script}" in cmd for cmd in comandos), 1)
-                    self.assertFalse(any(f"/2025/{carpeta}/" in cmd for cmd in comandos))
+                    otro_anio = 2026 if carpeta.startswith("8.") else 2025
+                    self.assertFalse(any(f"/{otro_anio}/{carpeta}/" in cmd for cmd in comandos))
 
-    def test_salida_final_ignora_copias_2025_y_no_inventa_anio(self):
+    def test_salida_final_lee_una_copia_y_conserva_la_compatibilidad_historica(self):
         for proceso, carpeta, nombre, extension in (
             ("6_ficha_social.py", "6.ficha_social", "Ficha_Social_v2", "xlsx"),
             ("8_solicitud_matricula.py", "8.solicitud_matricula", "Sol_Mtr_Deduplicado", "csv"),
@@ -42,10 +43,15 @@ class FuentesCompartidasTests(unittest.TestCase):
                 subprocess.run([sys.executable, str(script)], cwd=trabajo, check=True, capture_output=True)
                 salida = trabajo / f"data/consolidated/{carpeta.split('.', 1)[1]}/{nombre}.{extension}"
                 resultado = pd.read_excel(salida) if extension == "xlsx" else pd.read_csv(salida)
-                self.assertEqual(resultado["DATO"].tolist(), ["actual", "otro"])
-                self.assertEqual(list(resultado.columns), ["DATO"])
+                if proceso.startswith("8_"):
+                    self.assertEqual(resultado["DATO"].tolist(), ["copia-antigua", "sobrante"])
+                    self.assertEqual(resultado["ANIO_FUENTE"].tolist(), [2025, 2025])
+                else:
+                    self.assertEqual(resultado["DATO"].tolist(), ["actual", "otro"])
+                    self.assertEqual(list(resultado.columns), ["DATO"])
                 # Una copia antigua no debe servir de respaldo automático si falta la fuente actual.
-                entrada.unlink()
+                anio_fuente = 2025 if proceso.startswith("8_") else 2026
+                (trabajo / f"data/processed/{anio_fuente}/{carpeta}/{nombre}.{extension}").unlink()
                 fallo = subprocess.run([sys.executable, str(script)], cwd=trabajo, capture_output=True)
                 self.assertNotEqual(fallo.returncode, 0)
 

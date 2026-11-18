@@ -195,13 +195,13 @@ jobs:
         timeout-minutes: 4
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-        run: python "etl/procesos/2026/8. solicitud_matricula/01_descargar.py"
+        run: python "etl/procesos/2025/8. solicitud_matricula/01_descargar.py"
 
       - name: Ejecutar Solicitud Matricula (fuente compartida) - Transformacion
         id: paso_29
         continue-on-error: true
         timeout-minutes: 4
-        run: python "etl/procesos/2026/8. solicitud_matricula/02_transformacion.py"
+        run: python "etl/procesos/2025/8. solicitud_matricula/02_transformacion.py"
 
       - name: Ejecutar Consolidacion - Solicitud Matricula
         id: paso_30

@@ -4,7 +4,7 @@ import pandas as pd
 # ============================================================
 # CONFIG
 # ============================================================
-ARCHIVO_FUENTE = Path("data/processed/2026/8.solicitud_matricula/Sol_Mtr_Deduplicado.csv")
+ARCHIVO_FUENTE = Path("data/processed/2025/8.solicitud_matricula/Sol_Mtr_Deduplicado.csv")
 
 CARPETA_SALIDA = Path("data/consolidated/solicitud_matricula")
 ARCHIVO_SALIDA = CARPETA_SALIDA / "Sol_Mtr_Deduplicado.csv"
@@ -23,6 +23,8 @@ def leer_csv_seguro(ruta: Path) -> pd.DataFrame:
             "Número de celular": str,
         }
     )
+    # Compatibilidad con el payload de la ejecución #526 (31b0ba9).
+    df["ANIO_FUENTE"] = "2025"
     print(f"-> {len(df)} filas")
     return df
 

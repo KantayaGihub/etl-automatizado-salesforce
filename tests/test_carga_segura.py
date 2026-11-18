@@ -109,20 +109,19 @@ class CargaSeguraTests(unittest.TestCase):
             with self.subTest(objeto=objeto, campo=campo), self.assertRaises(ValueError):
                 segura.validar_registros([{"Valor__c": "nuevo", campo: 10}], self.sf.campos, objeto)
 
-    def test_rechazo_remoto_de_edades_se_reporta_sin_borrar_registros_anteriores(self):
+    def test_rechazo_remoto_de_edades_se_reporta_tras_el_borrado_historico(self):
         self.preparar_solicitud_legada()
-        anteriores = deepcopy(self.sf.registros)
         self.bulk.falla = "insert"
         with self.assertRaises(RuntimeError):
             segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, ["insert"])
-        self.assertEqual(self.sf.registros, anteriores)
+        self.assertEqual(self.bulk.operaciones, ["delete", "insert"])
+        self.assertEqual(self.sf.registros, [])
         self.assertEqual(json.loads(segura.RESULTADOS.read_text())["estado"], "error")
 
-    def test_edades_se_envian_y_solo_tras_aceptarse_se_borran_los_anteriores(self):
+    def test_edades_se_envian_despues_de_borrar_como_en_el_cargador_historico(self):
         self.preparar_solicitud_legada()
         segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, ["insert", "delete"])
+        self.assertEqual(self.bulk.operaciones, ["delete", "insert"])
         self.assertEqual(len(self.sf.registros), 1)
         self.assertEqual(self.sf.registros[0]["Edad actual"], 10)
         self.assertEqual(self.sf.registros[0]["Edad de ingreso"], 7)

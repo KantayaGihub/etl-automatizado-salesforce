@@ -217,14 +217,10 @@ def cargar(sf, bulk):
     try:
         for objeto, (_, registros) in preparados.items():
             anteriores = existentes[objeto]
-            # Con campos legados, comprobar la inserción antes de borrar los datos anteriores.
-            insertar_primero = any(CAMPOS_LEGADOS.get(objeto, set()) & set(r) for r in registros)
-            if insertar_primero:
-                ids = ejecutar_lotes(bulk, objeto, "insert", registros, informe)
+            # Mismo orden que los cargadores históricos: borrar y luego insertar.
             if anteriores:
                 ejecutar_lotes(bulk, objeto, "delete", [{"Id": r["Id"]} for r in anteriores], informe)
-            if not insertar_primero:
-                ids = ejecutar_lotes(bulk, objeto, "insert", registros, informe)
+            ids = ejecutar_lotes(bulk, objeto, "insert", registros, informe)
             actuales = sf.query_all(f"SELECT Id FROM {objeto}")["records"]
             if len(ids) != len(registros) or {r["Id"] for r in actuales} != set(ids):
                 raise RuntimeError(f"{objeto}: no coincide la verificación posterior a la carga")

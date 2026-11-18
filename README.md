@@ -136,10 +136,10 @@ Solicitud Matrícula conserva `Edad actual` y `Edad de ingreso` con sus nombres
 originales en el JSON destinado a Salesforce. Por excepción explícita, si esos
 dos campos no están homologados o no son insertables, la validación previa
 emite un aviso y continúa. Los demás campos mantienen la validación estricta.
-Esto no garantiza que Salesforce los acepte. Para ese envío, el coordinador
-inserta y comprueba todos los resultados antes de borrar los registros anteriores
-de Solicitud Matrícula. Un rechazo remoto sigue siendo un error; los registros
-anteriores permanecen y cualquier inserción parcial queda en el informe de lotes.
+Esto no garantiza que Salesforce los acepte. El coordinador usa el orden del
+cargador histórico: borrar primero e insertar después. Un rechazo remoto sigue
+siendo un error y puede dejar el objeto vacío o con inserciones parciales; los
+resultados quedan en el informe de lotes.
 
 En la rama `Fixing-etl-rc`, el workflow **Validar ETL 2025 y 2026 sin Salesforce**
 se activa con cambios en el ETL, sus pruebas o el workflow de validación.
@@ -147,9 +147,11 @@ Ejecuta las descargas, transformaciones y consolidaciones de los nueve procesos
 activos de `etl.yml`; no ejecuta los scripts de `carga/` ni recibe secrets `SF_*`.
 Ficha Social y Solicitud Matrícula se descargan y transforman una sola vez:
 sus scripts de ambos años apuntan al mismo Google Sheets. Se reutilizan los
-scripts y rutas de trabajo de `2026`, sin filtrar por año. Sus preparadores
-finales leen únicamente esa copia, conservan las rutas finales de carga y no
-añaden `ANIO_FUENTE` a partir de la carpeta. Las copias de `2025` no se incorporan.
+scripts y rutas de `2026` para Ficha Social y de `2025` para Solicitud Matrícula,
+sin filtrar por año. Cada preparador final lee solo su copia y conserva la ruta
+final de carga. Solicitud Matrícula vuelve a añadir `ANIO_FUENTE = 2025` para
+reproducir el payload de `31b0ba9`; es una etiqueta de compatibilidad, no una
+clasificación del año real de cada registro. Ficha Social no añade esa etiqueta.
 Continúa con las demás etapas si alguna falla, para recoger evidencia de todos
 los procesos. Los estados de los pasos y las cantidades de filas quedan en
 `resultados-validacion/resumen.md` y `resumen.json`.
@@ -178,8 +180,8 @@ a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 6. Espera los resultados de cada lote y verifica los IDs finales. Los errores e
    IDs insertados se guardan en `data/load-results.json`, subido incluso ante fallo.
 
-Solicitud Matrícula con las edades legadas se inserta y verifica antes de borrar
-sus registros anteriores. Los demás objetos mantienen el orden de borrar e insertar.
+Todos los objetos, incluida Solicitud Matrícula, usan el orden histórico de
+borrar primero e insertar después. Los resultados de ambas operaciones se comprueban.
 La concurrencia permite una ejecución a la vez y no cancela una carga en curso.
 El reemplazo de varios objetos no es una transacción única ni tiene restauración
 automática. Si falla, se conservan los informes de lotes, no una copia de los datos
