@@ -44,6 +44,17 @@ def homologar_columnas(dataframes):
     return dfs_homologados
 
 
+def quitar_duplicados(consolidado: pd.DataFrame) -> pd.DataFrame:
+    """Compara filas completas salvo el año de origen y prioriza la copia de 2025."""
+    columnas_datos = [c for c in consolidado.columns if c != "ANIO_FUENTE"]
+    ordenado = consolidado.sort_values(
+        "ANIO_FUENTE", key=lambda s: s.astype(str).ne("2025"), kind="stable"
+    )
+    resultado = ordenado.drop_duplicates(subset=columnas_datos, keep="first").reset_index(drop=True)
+    print(f"Filas duplicadas eliminadas (sin comparar ANIO_FUENTE): {len(consolidado) - len(resultado)}")
+    return resultado
+
+
 def main():
     print("=== CONSOLIDACIÓN MATRÍCULA ===")
 
@@ -61,6 +72,7 @@ def main():
     consolidado = pd.concat(dfs, ignore_index=True)
 
     print(f"Total concatenado: {len(consolidado)} filas")
+    consolidado = quitar_duplicados(consolidado)
 
     CARPETA_SALIDA.mkdir(parents=True, exist_ok=True)
     consolidado.to_csv(ARCHIVO_SALIDA, index=False, encoding="utf-8-sig")

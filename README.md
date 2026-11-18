@@ -165,6 +165,11 @@ a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 
 ## Carga validada sin backup
 
+Al finalizar la consolidación de Matrícula se eliminan filas idénticas comparando
+todas sus columnas salvo `ANIO_FUENTE`. Si la misma fila aparece en ambos años,
+se conserva la de 2025. Las filas con el mismo DNI y otros datos distintos se
+mantienen; el log muestra cuántas filas duplicadas se eliminaron.
+
 `ETL-Automatico-Salesforce` ejecuta en este orden:
 
 1. Descarga, transforma y prepara los archivos finales de los procesos activos.
