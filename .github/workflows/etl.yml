@@ -12,8 +12,8 @@ on:
     branches: [Fixing-etl-rc]
     paths:
       - .github/workflows/etl.yml
-      - etl/procesos/carga/**
-      - tests/test_carga_segura.py
+      - etl/**
+      - tests/**
 
 permissions:
   contents: read
