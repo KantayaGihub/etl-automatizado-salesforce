@@ -179,4 +179,10 @@ print(f"Archivo final guardado en: {debug_path}")
 # ==========================================================
 # Convertir a records
 # ==========================================================
-preparar(sf, OBJECT_NAME, df)
+# Conservar las edades originales en los CSV de revisión, pero no enviarlas:
+# no tienen un campo homologado en Salesforce. EDAD__c sí se conserva.
+columnas_solo_revision = [c for c in ("Edad actual", "Edad de ingreso") if c in df.columns]
+if columnas_solo_revision:
+    print("Columnas conservadas solo para revision: " + ", ".join(columnas_solo_revision))
+df_envio = df.drop(columns=columnas_solo_revision)
+preparar(sf, OBJECT_NAME, df_envio)

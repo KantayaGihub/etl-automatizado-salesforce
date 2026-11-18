@@ -16,10 +16,6 @@ from salesforce_bulk import SalesforceBulk
 
 PREPARADOS = Path("data/prepared")
 RESULTADOS = Path("data/load-results.json")
-# Excepción explícita: conservar estos nombres originales en el envío de solicitud.
-CAMPOS_LEGADOS = {
-    "Formulario_SolicitudMatricula_e__c": {"Edad actual", "Edad de ingreso"},
-}
 OBJETOS = (
     "Asistencias_e7__c", "Asistencias_Extracurriculares_e__c", "Matricula_e__c",
     "Calificaciones_areas_e__c", "Formulario_SatisfaccionInicial6grado_e__c",
@@ -48,8 +44,6 @@ def validar_registros(registros, campos, objeto=None):
     if not registros:
         raise ValueError("No se permite reemplazar Salesforce con cero registros")
     metadata = {c["name"]: c for c in campos}
-    excepciones = CAMPOS_LEGADOS.get(objeto, set())
-    advertidos = set()
     requeridos = {c["name"] for c in campos if c.get("createable")
                   and not c.get("nillable") and not c.get("defaultedOnCreate")}
     for numero, registro in enumerate(registros, 1):
@@ -57,9 +51,6 @@ def validar_registros(registros, campos, objeto=None):
             raise ValueError(f"Registro {numero} sin campos")
         desconocidos = set(registro) - set(metadata)
         no_escribibles = {n for n in registro if n in metadata and not metadata[n].get("createable")}
-        advertidos.update((desconocidos | no_escribibles) & excepciones)
-        desconocidos -= excepciones
-        no_escribibles -= excepciones
         if desconocidos or no_escribibles:
             raise ValueError("Campos desconocidos o no insertables: "
                              + ", ".join(sorted(desconocidos | no_escribibles)))
@@ -67,9 +58,6 @@ def validar_registros(registros, campos, objeto=None):
         if vacios:
             raise ValueError(f"Registro {numero}: faltan campos obligatorios: " + ", ".join(sorted(vacios)))
         for nombre, valor in registro.items():
-            if nombre in excepciones and (
-                    nombre not in metadata or not metadata[nombre].get("createable")):
-                continue
             if valor is None:
                 continue
             limite = metadata[nombre].get("length", 0)
@@ -101,10 +89,6 @@ def validar_registros(registros, campos, objeto=None):
                 if any(v not in permitidos for v in seleccionados):
                     raise ValueError(f"Registro {numero}: opción inválida en {nombre}")
     json.dumps(registros, ensure_ascii=False, allow_nan=False)
-    if advertidos:
-        print(f"AVISO {objeto}: se conservarán en el envío los campos sin homologar: "
-              + ", ".join(sorted(advertidos))
-              + ". Su aceptación se comprobará en los resultados de Salesforce.")
 
 
 def preparar(sf, objeto, dataframe):

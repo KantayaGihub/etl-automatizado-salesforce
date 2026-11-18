@@ -88,43 +88,41 @@ class BulkSimulado:
 
 
 class CargaSeguraTests(unittest.TestCase):
-    def preparar_solicitud_legada(self):
+    def test_edades_no_homologadas_se_rechazan_sin_excepciones(self):
+        for campo in ("Edad actual", "Edad de ingreso", "Otro desconocido"):
+            with self.subTest(campo=campo), self.assertRaises(ValueError):
+                segura.validar_registros([{"Valor__c": "nuevo", campo: 10}], self.sf.campos,
+                                         "Formulario_SolicitudMatricula_e__c")
+
+    def test_solicitud_excluye_edades_solo_del_envio_y_conserva_edad_calculada(self):
         objeto = "Formulario_SolicitudMatricula_e__c"
-        registros = pd.DataFrame({"Valor__c": ["nuevo"], "Edad actual": [10], "Edad de ingreso": [7]})
-        segura.preparar(self.sf, objeto, registros)
-        return objeto
-
-    def test_edades_legadas_se_conservan_en_el_preparado_con_aviso(self):
-        salida = io.StringIO()
-        with contextlib.redirect_stdout(salida):
-            objeto = self.preparar_solicitud_legada()
-        payload = json.loads((segura.PREPARADOS / f"{objeto}.json").read_text())
-        self.assertEqual(payload["registros"], [{"Valor__c": "nuevo", "Edad actual": 10, "Edad de ingreso": 7}])
-        self.assertIn("AVISO", salida.getvalue())
-        self.assertEqual(self.bulk.operaciones, [])
-
-    def test_excepcion_de_edades_no_se_extiende_a_otros_campos_u_objetos(self):
-        for objeto, campo in ((OBJETO, "Edad actual"),
-                              ("Formulario_SolicitudMatricula_e__c", "Otro desconocido")):
-            with self.subTest(objeto=objeto, campo=campo), self.assertRaises(ValueError):
-                segura.validar_registros([{"Valor__c": "nuevo", campo: 10}], self.sf.campos, objeto)
-
-    def test_rechazo_remoto_de_edades_se_reporta_tras_el_borrado_historico(self):
-        self.preparar_solicitud_legada()
-        self.bulk.falla = "insert"
-        with self.assertRaises(RuntimeError):
-            segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, ["delete", "insert"])
-        self.assertEqual(self.sf.registros, [])
-        self.assertEqual(json.loads(segura.RESULTADOS.read_text())["estado"], "error")
-
-    def test_edades_se_envian_despues_de_borrar_como_en_el_cargador_historico(self):
-        self.preparar_solicitud_legada()
-        segura.cargar(self.sf, self.bulk)
-        self.assertEqual(self.bulk.operaciones, ["delete", "insert"])
-        self.assertEqual(len(self.sf.registros), 1)
-        self.assertEqual(self.sf.registros[0]["Edad actual"], 10)
-        self.assertEqual(self.sf.registros[0]["Edad de ingreso"], 7)
+        self.sf.campos = [{"name": "EDAD__c", "createable": True, "nillable": False, "type": "int"},
+                          {"name": "ANIO_FUENTE__c", "createable": True, "nillable": True}]
+        entrada = Path(self.tmp.name) / "data/consolidated/solicitud_matricula/Sol_Mtr_Deduplicado.csv"
+        entrada.parent.mkdir(parents=True)
+        for extras in ({"Edad actual": [11], "Edad de ingreso": [7]},
+                       {"Edad actual": [11]}, {"Edad de ingreso": [7]}, {}):
+            with self.subTest(columnas=list(extras)):
+                pd.DataFrame({"EDAD": [10], "ANIO_FUENTE": [2025],
+                              "Nombre/s del niño/a": ["simulado"], "Departamento.1": ["simulado"],
+                              **extras}).to_csv(entrada, index=False)
+                anterior = Path.cwd()
+                try:
+                    os.chdir(self.tmp.name)
+                    falso = SimpleNamespace(Salesforce=lambda **kwargs: self.sf)
+                    with patch.dict(sys.modules, {"_carga_segura": segura, "simple_salesforce": falso}), \
+                            patch.dict(os.environ, {"SF_USERNAME": "simulado", "SF_PASSWORD": "simulado",
+                                                    "SF_SECURITY_TOKEN": "simulado"}):
+                        runpy.run_path(str(REPO / "etl/procesos/carga/08_solicitud_matricula.py"), run_name="__main__")
+                finally:
+                    os.chdir(anterior)
+                payload = json.loads((segura.PREPARADOS / f"{objeto}.json").read_text())
+                self.assertEqual(payload["registros"], [{"EDAD__c": 10, "ANIO_FUENTE__c": 2025}])
+                debug = pd.read_csv(entrada.parent / "DEBUG_para_salesforce.csv")
+                for columna, valores in extras.items():
+                    self.assertEqual(debug[columna].tolist(), valores)
+                    self.assertIn(columna, pd.read_csv(entrada).columns)
+                self.assertEqual(self.bulk.operaciones, [])
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

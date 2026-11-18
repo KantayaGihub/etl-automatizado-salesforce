@@ -132,14 +132,13 @@ pip install -r requirements.txt
 
 ## Validar ambos años sin cargar a Salesforce
 
-Solicitud Matrícula conserva `Edad actual` y `Edad de ingreso` con sus nombres
-originales en el JSON destinado a Salesforce. Por excepción explícita, si esos
-dos campos no están homologados o no son insertables, la validación previa
-emite un aviso y continúa. Los demás campos mantienen la validación estricta.
-Esto no garantiza que Salesforce los acepte. El coordinador usa el orden del
-cargador histórico: borrar primero e insertar después. Un rechazo remoto sigue
-siendo un error y puede dejar el objeto vacío o con inserciones parciales; los
-resultados quedan en el informe de lotes.
+Solicitud Matrícula conserva `Edad actual` y `Edad de ingreso` en los archivos
+fuente, el consolidado y `DEBUG_para_salesforce.csv`, pero las excluye del JSON
+preparado para Salesforce porque no tienen campos homologados. `EDAD__c`, calculada
+desde la fecha de nacimiento, se sigue enviando. La validación rechaza cualquier
+campo desconocido o no insertable, sin excepciones para las dos edades.
+El orden de carga sigue siendo borrar primero e insertar después. Los errores
+reales de Salesforce se conservan en el informe de lotes.
 
 En la rama `Fixing-etl-rc`, el workflow **Validar ETL 2025 y 2026 sin Salesforce**
 se activa con cambios en el ETL, sus pruebas o el workflow de validación.
@@ -170,8 +169,7 @@ a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 
 1. Descarga, transforma y prepara los archivos finales de los procesos activos.
 2. Valida los registros contra la metadata de Salesforce y guarda JSON preparados.
-   Rechaza vacíos, columnas duplicadas, campos desconocidos (salvo las dos edades
-   autorizadas de Solicitud Matrícula), tipos inválidos y requisitos incumplidos.
+   Rechaza vacíos, columnas duplicadas, campos desconocidos, tipos inválidos y requisitos incumplidos.
 3. Guarda los archivos preparados como artefactos de esta ejecución.
 4. Solo con carga manual habilitada desde `main`, recupera esos JSON y vuelve a
    validar todos los objetos antes de realizar cualquier escritura.
