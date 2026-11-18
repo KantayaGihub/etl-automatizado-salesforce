@@ -46,7 +46,10 @@ Google Drive / SharePoint
 | 10_asistencia_act_vivenciales       | `asistencia_actividades_vivenciales__c`     |
 | 11_habilidades                      | `BD_Habilidades_e__c`                       |
 
-Cada script ejecuta un ciclo completo: elimina registros existentes, espera confirmación de la API, e inserta el consolidado actualizado. El delete y el insert utilizan la misma instancia de `SalesforceBulk` para garantizar que la eliminación finalice antes de comenzar la inserción.
+Los scripts individuales de `carga/` ahora solo preparan y validan los registros
+contra la metadata de Salesforce, sin borrar ni insertar. Guardan JSON en
+`data/prepared/`. El coordinador `_carga_segura.py` realiza el reemplazo únicamente
+después de validar todos los registros preparados. No genera backup de Salesforce.
 
 ---
 
@@ -76,9 +79,14 @@ Cada script ejecuta un ciclo completo: elimina registros existentes, espera conf
 
 ## Automatizacion
 
-El pipeline se ejecuta automaticamente mediante GitHub Actions de lunes a viernes en los horarios: 08:00, 12:00, 16:00 y 18:00 (hora local configurada en el workflow).
+La programación automática está pausada durante la primera carga protegida.
+El workflow habitual se inicia manualmente. Por defecto solo prepara y valida;
+la opción `cargar_salesforce` permite el reemplazo exclusivamente desde `main`.
+En `Fixing-etl-rc`, los cambios de la protección ejecutan preparación y validación,
+pero nunca el job de carga.
 
 Los artefactos generados se eliminan automaticamente despues de 1 dia para evitar saturacion de almacenamiento.
+Los informes de resultados de carga se conservan 7 días; no contienen un backup de Salesforce.
 
 ---
 
@@ -121,3 +129,59 @@ pip install -r requirements.txt
 ```
 
 ---
+
+## Validar ambos años sin cargar a Salesforce
+
+Solicitud Matrícula conserva `Edad actual` y `Edad de ingreso` con sus nombres
+originales en el JSON destinado a Salesforce. Por excepción explícita, si esos
+dos campos no están homologados o no son insertables, la validación previa
+emite un aviso y continúa. Los demás campos mantienen la validación estricta.
+Esto no garantiza que Salesforce los acepte. Para ese envío, el coordinador
+inserta y comprueba todos los resultados antes de borrar los registros anteriores
+de Solicitud Matrícula. Un rechazo remoto sigue siendo un error; los registros
+anteriores permanecen y cualquier inserción parcial queda en el informe de lotes.
+
+En la rama `Fixing-etl-rc`, el workflow **Validar ETL 2025 y 2026 sin Salesforce**
+se activa con cambios en el ETL, sus pruebas o el workflow de validación.
+Ejecuta las descargas, transformaciones y consolidaciones de los nueve procesos
+activos de `etl.yml`; no ejecuta los scripts de `carga/` ni recibe secrets `SF_*`.
+Ficha Social y Solicitud Matrícula se descargan y transforman una sola vez:
+sus scripts de ambos años apuntan al mismo Google Sheets. Se reutilizan los
+scripts y rutas de trabajo de `2026`, sin filtrar por año. Sus preparadores
+finales leen únicamente esa copia, conservan las rutas finales de carga y no
+añaden `ANIO_FUENTE` a partir de la carpeta. Las copias de `2025` no se incorporan.
+Continúa con las demás etapas si alguna falla, para recoger evidencia de todos
+los procesos. Los estados de los pasos y las cantidades de filas quedan en
+`resultados-validacion/resumen.md` y `resumen.json`.
+
+En la ejecución de Actions, descarga el artefacto
+`validacion-etl-2025-2026-<ejecución>-<intento>`, disponible durante un día.
+Contiene `data/` con fuentes, archivos procesados y consolidados, además de los
+informes. La subida se intenta incluso si hubo errores; el resultado final se
+marca como fallido si un paso falla o se detectan salidas vacías o ilegibles.
+Un resultado correcto no certifica la calidad de las filas ni autoriza su carga
+a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
+
+## Carga validada sin backup
+
+`ETL-Automatico-Salesforce` ejecuta en este orden:
+
+1. Descarga, transforma y prepara los archivos finales de los procesos activos.
+2. Valida los registros contra la metadata de Salesforce y guarda JSON preparados.
+   Rechaza vacíos, columnas duplicadas, campos desconocidos (salvo las dos edades
+   autorizadas de Solicitud Matrícula), tipos inválidos y requisitos incumplidos.
+3. Guarda los archivos preparados como artefactos de esta ejecución.
+4. Solo con carga manual habilitada desde `main`, recupera esos JSON y vuelve a
+   validar todos los objetos antes de realizar cualquier escritura.
+5. Consulta los IDs actuales para reemplazar los registros. No exporta sus datos
+   ni genera, sube o requiere un backup de Salesforce.
+6. Espera los resultados de cada lote y verifica los IDs finales. Los errores e
+   IDs insertados se guardan en `data/load-results.json`, subido incluso ante fallo.
+
+Solicitud Matrícula con las edades legadas se inserta y verifica antes de borrar
+sus registros anteriores. Los demás objetos mantienen el orden de borrar e insertar.
+La concurrencia permite una ejecución a la vez y no cancela una carga en curso.
+El reemplazo de varios objetos no es una transacción única ni tiene restauración
+automática. Si falla, se conservan los informes de lotes, no una copia de los datos
+anteriores. Volver a ejecutar `main` carga las fuentes disponibles en ese momento;
+revertir un commit de Git no restaura el estado anterior de Salesforce.

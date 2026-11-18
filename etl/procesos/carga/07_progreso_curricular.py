@@ -1,22 +1,12 @@
+from _carga_segura import preparar
+from _homologacion_columnas import unificar_columnas_equivalentes
 import os
-import json
-from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from simple_salesforce import Salesforce
-from salesforce_bulk import SalesforceBulk
-from salesforce_bulk.util import IteratorBytesIO
-import time
 
-
-def wait_for_batch(bulk_client, job_id, batch_id):
-    while not bulk_client.is_batch_done(batch_id, job_id):
-        time.sleep(5)
-
-
-print("=== Eliminación de resultados previos Salesforce ===")
 
 # ================================================================
 # 1 Variables de entorno
@@ -40,43 +30,12 @@ sf = Salesforce(
     domain="login"
 )
 
-bulk = SalesforceBulk(
-    username=SF_USERNAME,
-    password=SF_PASSWORD,
-    security_token=SF_SECURITY_TOKEN,
-    sandbox=False
-)
 
 OBJECT_NAME = "Progreso_curricular_e__c"
 
 # ==========================================================
-# 2 Eliminar registros previos del objeto
 # ==========================================================
-query = f"SELECT Id FROM {OBJECT_NAME}"
-records = sf.query_all(query)['records']
 
-if not records:
-    print("No hay registros para eliminar.")
-else:
-    ids = [{"Id": r["Id"]} for r in records]
-
-    job = bulk.create_delete_job(OBJECT_NAME, contentType='JSON')
-
-    delete_batches = []
-    batch_size = 10000
-    for i in range(0, len(ids), batch_size):
-        batch_records = ids[i:i+batch_size]
-        json_bytes = json.dumps(batch_records).encode('utf-8')
-        batch_id = bulk.post_batch(job, IteratorBytesIO(iter([json_bytes])))
-        delete_batches.append(batch_id)
-
-    bulk.close_job(job)
-
-    print("Esperando finalizacion de eliminaciones...")
-    for batch_id in delete_batches:
-        wait_for_batch(bulk, job, batch_id)
-
-    print(f"Eliminacion completada: {len(ids)} registros")
 
 print("=== Cargando archivo consolidado ===")
 
@@ -144,6 +103,7 @@ Progreso_Curricular.columns = [
     col if str(col).endswith("__c") else f"{col}__c"
     for col in Progreso_Curricular.columns
 ]
+Progreso_Curricular = unificar_columnas_equivalentes(Progreso_Curricular)
 
 # ==========================================================
 # 6 Reemplazar nulos
@@ -166,26 +126,4 @@ print(f"Archivo final guardado para revision: {output_debug}")
 # ==========================================================
 # 8 Convertir DataFrame a lista de diccionarios
 # ==========================================================
-records = Progreso_Curricular.to_dict('records')
-
-# ==========================================================
-# 9 Crear job para insertar
-# ==========================================================
-job = bulk.create_insert_job(OBJECT_NAME, contentType='JSON')
-
-batch_size = 1000
-
-for i in range(0, len(records), batch_size):
-    batch_records = records[i:i+batch_size]
-    json_data = json.dumps(
-        batch_records,
-        ensure_ascii=False,
-        allow_nan=False
-    )
-    batch_io = BytesIO(json_data.encode('utf-8'))
-    bulk.post_batch(job, batch_io)
-    print(f"Lote {i // batch_size + 1} enviado ({len(batch_records)} registros)")
-
-bulk.close_job(job)
-
-print("Proceso enviado a Salesforce correctamente")
+preparar(sf, OBJECT_NAME, Progreso_Curricular)

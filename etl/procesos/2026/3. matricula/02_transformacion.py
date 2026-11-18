@@ -201,6 +201,31 @@ def _limpiar_celdas_todas(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = df[col].replace({"nan": pd.NA, "NaN": pd.NA, "None": pd.NA, "": pd.NA, "NA": pd.NA})
     return df
 
+def homologar_estado_matricula(df: pd.DataFrame) -> pd.DataFrame:
+    """Unifica el encabezado de 2026 con la columna de estado usada en 2025."""
+    alias = "ESTADO FINAL MATRICULA DOCS"
+    destino = "ESTADO FINAL MATRICULA"
+    if alias not in df.columns:
+        return df
+
+    if list(df.columns).count(alias) > 1 or list(df.columns).count(destino) > 1:
+        raise ValueError("Hay encabezados duplicados de estado final de matrícula")
+
+    if destino not in df.columns:
+        return df.rename(columns={alias: destino})
+
+    # Si vienen ambas variantes, no descartar valores ni duplicar el campo.
+    original = df[destino]
+    docs = df[alias]
+    conflictos = original.notna() & docs.notna() & original.ne(docs).fillna(False)
+    if conflictos.any():
+        raise ValueError(
+            f"Las columnas de estado final de matrícula discrepan en {int(conflictos.sum())} filas"
+        )
+    resultado = df.copy()
+    resultado[destino] = original.combine_first(docs)
+    return resultado.drop(columns=[alias])
+
 def _limpiar_errores_excel(df: pd.DataFrame) -> pd.DataFrame:
     """
     Reemplaza los errores de Excel por valores nulos (NA)
@@ -245,6 +270,7 @@ def leer_tabla_C5(archivo: Path, hoja: str) -> pd.DataFrame:
     # Encabezados NORMALIZADOS (sin tildes, MAYÚSCULAS, guiones norm)
     df.columns = _limpiar_encabezados(df.columns)
     df = _limpiar_celdas_todas(df)
+    df = homologar_estado_matricula(df)
     df = df.dropna(how="all")
     return df
 

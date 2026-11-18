@@ -1,18 +1,14 @@
+from _carga_segura import preparar
 import os
-import time
-import json
-from io import BytesIO
 
 import numpy as np
 import pandas as pd
 
 from simple_salesforce import Salesforce
-from salesforce_bulk import SalesforceBulk
-from salesforce_bulk.util import IteratorBytesIO
 
 
 print("====================================================")
-print("=== ETL CARGA SALESFORCE - EXTRACURRICULARES ===")
+print("=== ETL PREPARACION SALESFORCE - EXTRACURRICULARES ===")
 print("====================================================")
 
 
@@ -26,74 +22,10 @@ RUTA_CONSOLIDADO = (
     "asistencias_extra_consolidado_kantaya.csv"
 )
 
-DELETE_BATCH_SIZE = 10000
-INSERT_BATCH_SIZE = 1000
-
 
 # ================================================================
 # FUNCIONES AUXILIARES BULK API
 # ================================================================
-def wait_for_batch(bulk_client, job_id, batch_id):
-
-    while not bulk_client.is_batch_done(batch_id, job_id):
-
-        time.sleep(5)
-
-
-def get_batch_results_safe(bulk_client, job_id, batch_id):
-
-    try:
-
-        return list(
-            bulk_client.get_batch_results(batch_id, job_id)
-        )
-
-    except Exception as e:
-
-        print(f"Error obteniendo resultados batch: {e}")
-
-        return []
-
-
-def summarize_results(results):
-
-    ok = 0
-    fail = 0
-    errors = {}
-
-    for r in results:
-
-        if isinstance(r, dict):
-
-            success = str(r.get("success", "")).lower() == "true"
-            err = r.get("errors")
-
-        else:
-
-            success = str(getattr(r, "success", False)).lower() == "true"
-            err = getattr(r, "error", None)
-
-            if err is None:
-                err = getattr(r, "errors", None)
-
-        if success:
-
-            ok += 1
-
-        else:
-
-            fail += 1
-
-            if err is None:
-                err = "Sin detalle"
-
-            if isinstance(err, list):
-                err = " | ".join([str(x) for x in err])
-
-            err = str(err)
-            errors[err] = errors.get(err, 0) + 1
-
-    return ok, fail, errors
 
 
 # ================================================================
@@ -129,67 +61,12 @@ sf = Salesforce(
     domain="login"
 )
 
-bulk = SalesforceBulk(
-    username=SF_USERNAME,
-    password=SF_PASSWORD,
-    security_token=SF_SECURITY_TOKEN,
-    sandbox=False
-)
 
 print("Conexión Salesforce OK")
 
 
 # ================================================================
-# ELIMINACIÓN PREVIA
 # ================================================================
-print("\n=== ELIMINANDO REGISTROS PREVIOS ===")
-
-query = f"SELECT Id FROM {OBJECT_NAME}"
-
-records_delete = sf.query_all(query)["records"]
-
-if not records_delete:
-
-    print("No existen registros previos")
-
-else:
-
-    ids = [{"Id": r["Id"]} for r in records_delete]
-
-    print(f"Registros encontrados para eliminar: {len(ids):,}")
-
-    delete_job = bulk.create_delete_job(OBJECT_NAME, contentType="JSON")
-
-    delete_batches = []
-
-    for i in range(0, len(ids), DELETE_BATCH_SIZE):
-
-        batch_records = ids[i:i + DELETE_BATCH_SIZE]
-
-        json_bytes = json.dumps(batch_records).encode("utf-8")
-
-        batch_id = bulk.post_batch(
-            delete_job,
-            IteratorBytesIO(iter([json_bytes]))
-        )
-
-        delete_batches.append(batch_id)
-
-        print(f"Batch delete enviado {i // DELETE_BATCH_SIZE + 1}")
-
-    bulk.close_job(delete_job)
-
-    # ----------------------------------------------------------------
-    # Esperar a que TODOS los batches de delete terminen
-    # antes de continuar con el insert
-    # ----------------------------------------------------------------
-    print("Esperando finalización de deletes...")
-
-    for batch_id in delete_batches:
-
-        wait_for_batch(bulk, delete_job, batch_id)
-
-    print("Eliminación completada")
 
 
 # ================================================================
@@ -329,7 +206,7 @@ if invalid_cols:
 
     print("\n Campos inexistentes en Salesforce:")
     print(invalid_cols)
-    Asistencias = Asistencias.drop(columns=invalid_cols)
+    raise ValueError("Hay campos sin correspondencia en Salesforce; corregir el mapeo antes de preparar")
 
 print("Validación de campos OK")
 
@@ -337,93 +214,4 @@ print("Validación de campos OK")
 # ================================================================
 # CONVERTIR A RECORDS
 # ================================================================
-records_insert = Asistencias.to_dict("records")
-
-print("\n=== RESUMEN FINAL PRE-CARGA ===")
-print(f"Registros a insertar: {len(records_insert):,}")
-print(f"Campos finales: {len(Asistencias.columns)}")
-
-
-# ================================================================
-# INSERT BULK API  —  reutiliza la misma instancia `bulk`
-# ================================================================
-print("\n=== ENVIANDO A SALESFORCE BULK API ===")
-
-# NOTA: NO se re-instancia SalesforceBulk aquí.
-# Se usa la misma variable `bulk` creada al inicio del script
-# para garantizar que el DELETE ya finalizó antes del INSERT.
-
-insert_job = bulk.create_insert_job(OBJECT_NAME, contentType="JSON")
-
-insert_batches = []
-
-for i in range(0, len(records_insert), INSERT_BATCH_SIZE):
-
-    batch_records = records_insert[i:i + INSERT_BATCH_SIZE]
-
-    json_data = json.dumps(batch_records, ensure_ascii=False, allow_nan=False)
-
-    batch_io = BytesIO(json_data.encode("utf-8"))
-
-    batch_id = bulk.post_batch(insert_job, batch_io)
-
-    insert_batches.append(batch_id)
-
-    print(
-        f"Lote {i // INSERT_BATCH_SIZE + 1} enviado "
-        f"({len(batch_records)} registros)"
-    )
-
-bulk.close_job(insert_job)
-
-print("\n Esperando resultados Salesforce...")
-
-
-# ================================================================
-# RESULTADOS
-# ================================================================
-insertados = 0
-fallidos = 0
-errores_totales = {}
-
-for i, batch_id in enumerate(insert_batches, start=1):
-
-    wait_for_batch(bulk, insert_job, batch_id)
-
-    resultados = get_batch_results_safe(bulk, insert_job, batch_id)
-
-    ok, fail, errores = summarize_results(resultados)
-
-    insertados += ok
-    fallidos += fail
-
-    for err, n in errores.items():
-        errores_totales[err] = errores_totales.get(err, 0) + n
-
-    print(f"Lote {i}: insertados={ok}, fallidos={fail}")
-
-
-# ================================================================
-# RESUMEN FINAL
-# ================================================================
-print("\n====================================================")
-print("=== RESULTADO FINAL ===")
-print("====================================================")
-
-print(f"Insertados: {insertados:,}")
-print(f"Fallidos: {fallidos:,}")
-print(f"Total procesados: {len(records_insert):,}")
-
-if errores_totales:
-
-    print("\n=== TOP ERRORES SALESFORCE ===")
-
-    for err, n in sorted(
-        errores_totales.items(),
-        key=lambda x: x[1],
-        reverse=True
-    )[:10]:
-
-        print(f"{n} filas -> {err}")
-
-print("\n PROCESO FINALIZADO")
+preparar(sf, OBJECT_NAME, Asistencias)

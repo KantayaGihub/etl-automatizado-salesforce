@@ -22,6 +22,8 @@ HOJAS_VALIDAS = [
     "11 Huancayo - IE N° 31545",
 ]
 
+ALIAS_HOJAS = {"01 Pachacútec": "01 Pachacutec"}
+
 
 def normalizar_texto(x: str) -> str:
     return (
@@ -38,9 +40,13 @@ def cargar_archivo() -> dict[str, pd.DataFrame]:
         raise FileNotFoundError(f"No existe el archivo de entrada: {INPUT_FILE}")
 
     sheets_all = pd.read_excel(INPUT_FILE, sheet_name=None)
-    sheets_dict = {k: v for k, v in sheets_all.items() if k in HOJAS_VALIDAS}
+    sheets_dict = {
+        k: v for k, v in sheets_all.items()
+        if ALIAS_HOJAS.get(k, k) in HOJAS_VALIDAS
+    }
 
-    faltantes = [h for h in HOJAS_VALIDAS if h not in sheets_dict]
+    encontradas = {ALIAS_HOJAS.get(k, k) for k in sheets_dict}
+    faltantes = [h for h in HOJAS_VALIDAS if h not in encontradas]
     if faltantes:
         print("Hojas no encontradas (revisar nombres exactos):", faltantes)
 
