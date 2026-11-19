@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import re
 from zoneinfo import ZoneInfo
 
 import requests
@@ -56,6 +57,12 @@ def detalle_error(error):
     status = getattr(error, "status", None)
     if isinstance(status, int):
         partes.append(f"HTTP {status}")
+    contenido = getattr(error, "content", None)
+    errores = contenido if isinstance(contenido, list) else [contenido]
+    for item in errores:
+        codigo = item.get("errorCode") if isinstance(item, dict) else None
+        if isinstance(codigo, str) and re.fullmatch(r"[A-Z][A-Z0-9_]*", codigo):
+            partes.append(codigo)
     return "; ".join(partes)
 
 
@@ -71,9 +78,13 @@ def contar(sf):
                 raise ValueError("Respuesta de conteo inválida")
             fila.update(registros=cantidad, estado="correcto")
             print(f"{proceso}: {cantidad:,} registros actuales ({objeto})", flush=True)
+            if os.getenv("GITHUB_ACTIONS") == "true":
+                print(f"::notice title=Conteo de {proceso}::{cantidad} registros actuales ({objeto})", flush=True)
         except Exception as error:
             fila["detalle"] = detalle_error(error)
             print(f"{proceso}: ERROR de consulta ({fila['detalle']}); continúa el diagnóstico", flush=True)
+            if os.getenv("GITHUB_ACTIONS") == "true":
+                print(f"::error title=Consulta de {objeto}::{fila['detalle']}", flush=True)
         resultados.append(fila)
     return resultados
 
@@ -117,6 +128,8 @@ def main():
     except Exception as error:
         error_general = detalle_error(error)
         print(f"No se pudo iniciar la consulta: {error_general}", flush=True)
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            print(f"::error title=Conexion de solo lectura::{error_general}", flush=True)
     guardar_resultados(resultados, "resultados-salesforce", error_general)
     return 1 if error_general or any(f["estado"] != "correcto" for f in resultados) else 0
 

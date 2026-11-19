@@ -15,6 +15,15 @@ SPEC.loader.exec_module(conteo)
 
 
 class ConteoSalesforceTests(unittest.TestCase):
+    def test_detalle_de_error_conserva_codigo_sin_publicar_mensaje(self):
+        error = RuntimeError("mensaje-privado")
+        error.status = 400
+        error.content = [{"errorCode": "INVALID_TYPE", "message": "mensaje-privado"}]
+        detalle = conteo.detalle_error(error)
+        self.assertIn("INVALID_TYPE", detalle)
+        self.assertIn("HTTP 400", detalle)
+        self.assertNotIn("mensaje-privado", detalle)
+
     def test_conexion_configura_timeout_y_solo_reintentos_get(self):
         with patch.dict(os.environ, {"SF_USERNAME": "simulado", "SF_PASSWORD": "simulado",
                                      "SF_SECURITY_TOKEN": "simulado"}), \
