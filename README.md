@@ -163,28 +163,32 @@ marca como fallido si un paso falla o se detectan salidas vacías o ilegibles.
 Un resultado correcto no certifica la calidad de las filas ni autoriza su carga
 a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 
-## Consultar cantidades de Salesforce sin ejecutar el ETL
+## Exportar Matrícula y Solicitud Matrícula sin ejecutar el ETL
 
-El workflow **Consultar cantidades Salesforce (solo lectura)** ejecuta únicamente
-`scripts/contar_salesforce.py`. Usa los secrets `SF_USERNAME`, `SF_PASSWORD` y
-`SF_SECURITY_TOKEN` para realizar `SELECT COUNT()` en los once objetos conocidos
-del ETL, indicando los nueve activos y los dos inactivos. No descarga las fuentes,
-no transforma archivos del ETL, no ejecuta cargadores y no modifica Salesforce.
+El workflow **Exportar Matricula y Solicitud Salesforce (solo lectura)** ejecuta
+`scripts/exportar_salesforce.py` en `Testeo-data-sf`. Usa los secrets de Salesforce
+existentes y solo realiza consultas: lee la descripción de campos y todos los
+registros activos visibles de `Matricula_e__c` y `Formulario_SolicitudMatricula_e__c`,
+recorriendo la paginación sin filtrar por año ni limitar la cantidad de registros.
+No descarga las fuentes ni ejecuta transformadores o cargadores del ETL.
 
-En `Testeo-data-sf` se activa al hacer push de cambios en el diagnóstico o sus
-pruebas. Para repetirlo, abre su ejecución en Actions y pulsa **Re-run all jobs**;
-solo se repite este diagnóstico. También declara ejecución manual para cuando
-el workflow esté disponible en la rama predeterminada de GitHub.
+Genera un único `datos_matricula_salesforce.xlsx` con exactamente dos hojas:
+`Matricula` y `Solicitud_Matricula`. Los encabezados son los nombres de campo de
+Salesforce, incluyendo Id y campos del sistema; las etiquetas amigables están
+como comentarios de los encabezados. Los DNI se conservan como texto. Estos son
+los datos actuales de Salesforce, no los Excel originales ni una reproducción
+histórica exacta del payload de una carga anterior.
 
-Las cantidades aparecen en el log del paso **Consultar cantidades actuales** y
-en el **Summary** de la ejecución. El artefacto `conteo-salesforce-<run>-<intento>`
-se descarga como ZIP con `resumen.csv` (abrible con Excel), `resumen.json` y
-`resumen.md`, disponible siete días. No contiene registros individuales. Los
-conteos incluyen los registros visibles para el usuario de integración, sin la
-papelera; no representan personas únicas. Un error de un objeto se informa y
-se continúa con los siguientes; al final la ejecución queda fallida si hubo errores
-en objetos activos o al conectar. Un objeto inactivo no disponible se muestra
-como advertencia, sin inventar una cantidad de cero.
+La cantidad exportada de cada objeto aparece en los logs, las anotaciones y el
+Summary. Los datos individuales solo se guardan en el Excel del artefacto
+`datos-matricula-salesforce-<run>-<intento>`, que se descarga como ZIP y se retiene
+un día. Solo se publica cuando ambas hojas se han generado completamente.
+
+El push de cambios del diagnóstico a `Testeo-data-sf` ejecuta este workflow.
+Para repetirlo, abre su ejecución en Actions y pulsa **Re-run all jobs**; no se
+repite el ETL. También declara ejecución manual para cuando el workflow esté
+disponible en la rama predeterminada. El script anterior `contar_salesforce.py`
+sigue disponible para consultar conteos, pero ya no lo ejecuta este workflow.
 
 ## Carga validada sin backup
 
