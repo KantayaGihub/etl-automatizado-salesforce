@@ -1,0 +1,2 @@
+Solicitud de exportación de solo lectura: 2026-11-19T21:25:54.182699+00:00
+Objetos: Matricula_e__c y Formulario_SolicitudMatricula_e__c

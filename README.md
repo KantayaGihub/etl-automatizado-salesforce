@@ -163,7 +163,53 @@ marca como fallido si un paso falla o se detectan salidas vacías o ilegibles.
 Un resultado correcto no certifica la calidad de las filas ni autoriza su carga
 a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 
+## Exportar Matrícula y Solicitud Matrícula sin ejecutar el ETL
+
+El workflow **Exportar Matricula y Solicitud Salesforce (solo lectura)** ejecuta
+`scripts/exportar_salesforce.py` en `Testeo-data-sf`. Usa los secrets de Salesforce
+existentes y solo realiza consultas: lee la descripción de campos y todos los
+registros activos visibles de `Matricula_e__c` y `Formulario_SolicitudMatricula_e__c`,
+recorriendo la paginación sin filtrar por año ni limitar la cantidad de registros.
+No descarga las fuentes ni ejecuta transformadores o cargadores del ETL.
+
+Genera un único `datos_matricula_salesforce.xlsx` con exactamente dos hojas:
+`Matricula` y `Solicitud_Matricula`. Los encabezados son los nombres de campo de
+Salesforce, incluyendo Id y campos del sistema; las etiquetas amigables están
+como comentarios de los encabezados. Los DNI se conservan como texto. Estos son
+los datos actuales de Salesforce, no los Excel originales ni una reproducción
+histórica exacta del payload de una carga anterior.
+
+La cantidad exportada de cada objeto aparece en los logs, las anotaciones y el
+Summary. Los datos individuales solo se guardan en el Excel del artefacto
+`datos-matricula-salesforce-<run>-<intento>`, que se descarga como ZIP y se retiene
+un día. Solo se publica cuando ambas hojas se han generado completamente.
+
+El push de cambios del diagnóstico a `Testeo-data-sf` ejecuta este workflow.
+También puede solicitarse una nueva exportación actualizando la fecha de
+`.github/solicitudes/exportar-salesforce.txt` y haciendo push a esa rama.
+Para repetirlo, abre su ejecución en Actions y pulsa **Re-run all jobs**; no se
+repite el ETL. También declara ejecución manual para cuando el workflow esté
+disponible en la rama predeterminada. El script anterior `contar_salesforce.py`
+sigue disponible para consultar conteos, pero ya no lo ejecuta este workflow.
+
 ## Carga validada sin backup
+
+Un push a `main` ejecuta preparación y validación solo si el mensaje del commit
+incluye `[probar-etl]`. El job de carga permanece desactivado en eventos push:
+requiere ejecución manual desde `main` con `cargar_salesforce` activado.
+
+Solicitud Matrícula conserva solo la primera fila de cada
+documento no vacío del niño (`Nmero_de_Documento__c`) antes de generar el JSON de
+carga. Respeta el orden del consolidado, aunque fechas u otros datos difieran.
+No deduplica por el documento del apoderado; conserva los archivos originales y
+de revisión. El log indica cuántas solicitudes se excluyeron del envío.
+
+La preparación de Matrícula aplica además una regla
+de DNI único: conserva la primera fila de cada DNI no vacío en el orden del
+consolidado y elimina las siguientes, aunque otros valores difieran. El filtro
+se aplica antes de guardar `matricula_final_para_salesforce.csv` y el JSON de
+carga; no modifica el consolidado original ni Solicitud Matrícula. El log indica
+cuántas filas se eliminaron. Las filas sin DNI no se consideran duplicadas entre sí.
 
 Al finalizar la consolidación de Matrícula se eliminan filas idénticas comparando
 todas sus columnas salvo `ANIO_FUENTE`. Si la misma fila aparece en ambos años,

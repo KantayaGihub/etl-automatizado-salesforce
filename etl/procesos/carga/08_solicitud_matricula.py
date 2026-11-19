@@ -185,4 +185,15 @@ columnas_solo_revision = [c for c in ("Edad actual", "Edad de ingreso") if c in 
 if columnas_solo_revision:
     print("Columnas conservadas solo para revision: " + ", ".join(columnas_solo_revision))
 df_envio = df.drop(columns=columnas_solo_revision)
+
+# Una solicitud por documento del niño, respetando el orden del consolidado.
+if "Nmero_de_Documento__c" not in df_envio.columns:
+    raise ValueError("No se encontró Nmero_de_Documento__c; no se pueden filtrar documentos repetidos")
+documento_comparacion = df_envio["Nmero_de_Documento__c"].astype("string").str.strip()
+documentos_presentes = documento_comparacion.notna() & documento_comparacion.ne("").fillna(False)
+duplicados = documentos_presentes & documento_comparacion.duplicated(keep="first")
+print(f"Solicitudes eliminadas por documento repetido (se conserva la primera): {int(duplicados.sum())}")
+df_envio = df_envio.loc[~duplicados].copy()
+if os.getenv("ETL_PUBLICAR_ERRORES") == "true":
+    print(f"::notice title=Solicitud Matricula sin documentos repetidos::{len(df_envio)} registros preparados; {int(duplicados.sum())} filas repetidas excluidas")
 preparar(sf, OBJECT_NAME, df_envio)
