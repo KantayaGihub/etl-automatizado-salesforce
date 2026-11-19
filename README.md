@@ -185,6 +185,8 @@ Summary. Los datos individuales solo se guardan en el Excel del artefacto
 un día. Solo se publica cuando ambas hojas se han generado completamente.
 
 El push de cambios del diagnóstico a `Testeo-data-sf` ejecuta este workflow.
+También puede solicitarse una nueva exportación actualizando la fecha de
+`.github/solicitudes/exportar-salesforce.txt` y haciendo push a esa rama.
 Para repetirlo, abre su ejecución en Actions y pulsa **Re-run all jobs**; no se
 repite el ETL. También declara ejecución manual para cuando el workflow esté
 disponible en la rama predeterminada. El script anterior `contar_salesforce.py`

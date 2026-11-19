@@ -10,6 +10,7 @@ on:
       - scripts/exportar_salesforce.py
       - tests/test_conteo_salesforce.py
       - tests/test_exportar_salesforce.py
+      - .github/solicitudes/exportar-salesforce.txt
 
 permissions:
   contents: read
