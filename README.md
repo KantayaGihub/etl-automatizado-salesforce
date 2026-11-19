@@ -192,6 +192,12 @@ sigue disponible para consultar conteos, pero ya no lo ejecuta este workflow.
 
 ## Carga validada sin backup
 
+En `Testeo-data-sf`, Solicitud Matrícula conserva solo la primera fila de cada
+documento no vacío del niño (`Nmero_de_Documento__c`) antes de generar el JSON de
+carga. Respeta el orden del consolidado, aunque fechas u otros datos difieran.
+No deduplica por el documento del apoderado; conserva los archivos originales y
+de revisión. El log indica cuántas solicitudes se excluyeron del envío.
+
 En la rama `Testeo-data-sf`, la preparación de Matrícula aplica además una regla
 de DNI único: conserva la primera fila de cada DNI no vacío en el orden del
 consolidado y elimina las siguientes, aunque otros valores difieran. El filtro

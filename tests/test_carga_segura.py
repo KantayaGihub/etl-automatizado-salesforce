@@ -97,13 +97,14 @@ class CargaSeguraTests(unittest.TestCase):
     def test_solicitud_excluye_edades_solo_del_envio_y_conserva_edad_calculada(self):
         objeto = "Formulario_SolicitudMatricula_e__c"
         self.sf.campos = [{"name": "EDAD__c", "createable": True, "nillable": False, "type": "int"},
+                          {"name": "Nmero_de_Documento__c", "createable": True, "nillable": True},
                           {"name": "ANIO_FUENTE__c", "createable": True, "nillable": True}]
         entrada = Path(self.tmp.name) / "data/consolidated/solicitud_matricula/Sol_Mtr_Deduplicado.csv"
         entrada.parent.mkdir(parents=True)
         for extras in ({"Edad actual": [11], "Edad de ingreso": [7]},
                        {"Edad actual": [11]}, {"Edad de ingreso": [7]}, {}):
             with self.subTest(columnas=list(extras)):
-                pd.DataFrame({"EDAD": [10], "ANIO_FUENTE": [2025],
+                pd.DataFrame({"EDAD": [10], "ANIO_FUENTE": [2025], "Número de Documento": ["00000001"],
                               "Nombre/s del niño/a": ["simulado"], "Departamento.1": ["simulado"],
                               **extras}).to_csv(entrada, index=False)
                 anterior = Path.cwd()
@@ -117,7 +118,8 @@ class CargaSeguraTests(unittest.TestCase):
                 finally:
                     os.chdir(anterior)
                 payload = json.loads((segura.PREPARADOS / f"{objeto}.json").read_text())
-                self.assertEqual(payload["registros"], [{"EDAD__c": 10, "ANIO_FUENTE__c": 2025}])
+                self.assertEqual(payload["registros"], [{"EDAD__c": 10, "ANIO_FUENTE__c": 2025,
+                                                         "Nmero_de_Documento__c": "00000001"}])
                 debug = pd.read_csv(entrada.parent / "DEBUG_para_salesforce.csv")
                 for columna, valores in extras.items():
                     self.assertEqual(debug[columna].tolist(), valores)
