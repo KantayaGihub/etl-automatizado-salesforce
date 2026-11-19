@@ -15,6 +15,17 @@ SPEC.loader.exec_module(conteo)
 
 
 class ConteoSalesforceTests(unittest.TestCase):
+    def test_objeto_inactivo_no_disponible_se_informa_sin_fallar_el_diagnostico(self):
+        sf = Mock(spec_set=["query"])
+        sf.query.side_effect = [{"totalSize": 1}] * 10 + [RuntimeError("no disponible")]
+        resultado = conteo.contar(sf)
+        self.assertEqual(resultado[-1]["estado"], "no disponible")
+        self.assertIsNone(resultado[-1]["registros"])
+        with patch.object(conteo, "conectar", return_value=sf), \
+                patch.object(conteo, "contar", return_value=resultado), \
+                patch.object(conteo, "guardar_resultados"):
+            self.assertEqual(conteo.main(), 0)
+
     def test_detalle_de_error_conserva_codigo_sin_publicar_mensaje(self):
         error = RuntimeError("mensaje-privado")
         error.status = 400

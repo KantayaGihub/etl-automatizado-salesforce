@@ -182,7 +182,9 @@ se descarga como ZIP con `resumen.csv` (abrible con Excel), `resumen.json` y
 `resumen.md`, disponible siete días. No contiene registros individuales. Los
 conteos incluyen los registros visibles para el usuario de integración, sin la
 papelera; no representan personas únicas. Un error de un objeto se informa y
-se continúa con los siguientes; al final la ejecución queda fallida si hubo errores.
+se continúa con los siguientes; al final la ejecución queda fallida si hubo errores
+en objetos activos o al conectar. Un objeto inactivo no disponible se muestra
+como advertencia, sin inventar una cantidad de cero.
 
 ## Carga validada sin backup
 

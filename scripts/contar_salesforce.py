@@ -78,13 +78,15 @@ def contar(sf):
                 raise ValueError("Respuesta de conteo inválida")
             fila.update(registros=cantidad, estado="correcto")
             print(f"{proceso}: {cantidad:,} registros actuales ({objeto})", flush=True)
-            if os.getenv("GITHUB_ACTIONS") == "true":
+            if os.getenv("SF_PUBLICAR_CONTEOS") == "true":
                 print(f"::notice title=Conteo de {proceso}::{cantidad} registros actuales ({objeto})", flush=True)
         except Exception as error:
             fila["detalle"] = detalle_error(error)
-            print(f"{proceso}: ERROR de consulta ({fila['detalle']}); continúa el diagnóstico", flush=True)
-            if os.getenv("GITHUB_ACTIONS") == "true":
-                print(f"::error title=Consulta de {objeto}::{fila['detalle']}", flush=True)
+            fila["estado"] = "error" if activo else "no disponible"
+            print(f"{proceso}: {fila['estado']} ({fila['detalle']}); continúa el diagnóstico", flush=True)
+            if os.getenv("SF_PUBLICAR_CONTEOS") == "true":
+                nivel = "error" if activo else "warning"
+                print(f"::{nivel} title=Consulta de {objeto}::{fila['detalle']}", flush=True)
         resultados.append(fila)
     return resultados
 
@@ -128,10 +130,10 @@ def main():
     except Exception as error:
         error_general = detalle_error(error)
         print(f"No se pudo iniciar la consulta: {error_general}", flush=True)
-        if os.getenv("GITHUB_ACTIONS") == "true":
+        if os.getenv("SF_PUBLICAR_CONTEOS") == "true":
             print(f"::error title=Conexion de solo lectura::{error_general}", flush=True)
     guardar_resultados(resultados, "resultados-salesforce", error_general)
-    return 1 if error_general or any(f["estado"] != "correcto" for f in resultados) else 0
+    return 1 if error_general or any(f["activo_en_etl"] and f["estado"] != "correcto" for f in resultados) else 0
 
 
 if __name__ == "__main__":
