@@ -163,6 +163,27 @@ marca como fallido si un paso falla o se detectan salidas vacías o ilegibles.
 Un resultado correcto no certifica la calidad de las filas ni autoriza su carga
 a Salesforce. El workflow habitual `etl.yml` sigue teniendo las cargas reales.
 
+## Consultar cantidades de Salesforce sin ejecutar el ETL
+
+El workflow **Consultar cantidades Salesforce (solo lectura)** ejecuta únicamente
+`scripts/contar_salesforce.py`. Usa los secrets `SF_USERNAME`, `SF_PASSWORD` y
+`SF_SECURITY_TOKEN` para realizar `SELECT COUNT()` en los once objetos conocidos
+del ETL, indicando los nueve activos y los dos inactivos. No descarga las fuentes,
+no transforma archivos del ETL, no ejecuta cargadores y no modifica Salesforce.
+
+En `Testeo-data-sf` se activa al hacer push de cambios en el diagnóstico o sus
+pruebas. Para repetirlo, abre su ejecución en Actions y pulsa **Re-run all jobs**;
+solo se repite este diagnóstico. También declara ejecución manual para cuando
+el workflow esté disponible en la rama predeterminada de GitHub.
+
+Las cantidades aparecen en el log del paso **Consultar cantidades actuales** y
+en el **Summary** de la ejecución. El artefacto `conteo-salesforce-<run>-<intento>`
+se descarga como ZIP con `resumen.csv` (abrible con Excel), `resumen.json` y
+`resumen.md`, disponible siete días. No contiene registros individuales. Los
+conteos incluyen los registros visibles para el usuario de integración, sin la
+papelera; no representan personas únicas. Un error de un objeto se informa y
+se continúa con los siguientes; al final la ejecución queda fallida si hubo errores.
+
 ## Carga validada sin backup
 
 Al finalizar la consolidación de Matrícula se eliminan filas idénticas comparando
