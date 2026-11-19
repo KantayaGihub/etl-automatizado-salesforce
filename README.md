@@ -192,6 +192,13 @@ sigue disponible para consultar conteos, pero ya no lo ejecuta este workflow.
 
 ## Carga validada sin backup
 
+En la rama `Testeo-data-sf`, la preparación de Matrícula aplica además una regla
+de DNI único: conserva la primera fila de cada DNI no vacío en el orden del
+consolidado y elimina las siguientes, aunque otros valores difieran. El filtro
+se aplica antes de guardar `matricula_final_para_salesforce.csv` y el JSON de
+carga; no modifica el consolidado original ni Solicitud Matrícula. El log indica
+cuántas filas se eliminaron. Las filas sin DNI no se consideran duplicadas entre sí.
+
 Al finalizar la consolidación de Matrícula se eliminan filas idénticas comparando
 todas sus columnas salvo `ANIO_FUENTE`. Si la misma fila aparece en ambos años,
 se conserva la de 2025. Las filas con el mismo DNI y otros datos distintos se

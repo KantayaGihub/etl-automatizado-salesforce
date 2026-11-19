@@ -122,5 +122,14 @@ print("Archivo preparado correctamente para Salesforce Bulk API")
 
 Matricula = Matricula.replace({float('nan'): None, pd.NA: None, np.nan: None})
 
+# Regla de esta rama: una fila por DNI, conservando el orden del consolidado.
+if "DNI__c" not in Matricula.columns:
+    raise ValueError("No se encontró DNI__c; no se puede aplicar el filtro de DNI repetidos")
+dni_comparacion = Matricula["DNI__c"].astype("string").str.strip()
+dni_presentes = dni_comparacion.notna() & dni_comparacion.ne("").fillna(False)
+duplicados = dni_presentes & dni_comparacion.duplicated(keep="first")
+print(f"Filas eliminadas por DNI repetido (se conserva la primera): {int(duplicados.sum())}")
+Matricula = Matricula.loc[~duplicados].copy()
+
 Matricula.to_csv(OUTPUT_FINAL, index=False, encoding="utf-8-sig")
 preparar(sf, OBJECT_NAME, Matricula)
