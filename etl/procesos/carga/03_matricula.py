@@ -130,6 +130,8 @@ dni_presentes = dni_comparacion.notna() & dni_comparacion.ne("").fillna(False)
 duplicados = dni_presentes & dni_comparacion.duplicated(keep="first")
 print(f"Filas eliminadas por DNI repetido (se conserva la primera): {int(duplicados.sum())}")
 Matricula = Matricula.loc[~duplicados].copy()
+if os.getenv("ETL_PUBLICAR_ERRORES") == "true":
+    print(f"::notice title=Matricula sin DNI repetidos::{len(Matricula)} registros preparados; {int(duplicados.sum())} filas repetidas excluidas")
 
 Matricula.to_csv(OUTPUT_FINAL, index=False, encoding="utf-8-sig")
 preparar(sf, OBJECT_NAME, Matricula)

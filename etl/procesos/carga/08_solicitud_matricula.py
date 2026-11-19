@@ -194,4 +194,6 @@ documentos_presentes = documento_comparacion.notna() & documento_comparacion.ne(
 duplicados = documentos_presentes & documento_comparacion.duplicated(keep="first")
 print(f"Solicitudes eliminadas por documento repetido (se conserva la primera): {int(duplicados.sum())}")
 df_envio = df_envio.loc[~duplicados].copy()
+if os.getenv("ETL_PUBLICAR_ERRORES") == "true":
+    print(f"::notice title=Solicitud Matricula sin documentos repetidos::{len(df_envio)} registros preparados; {int(duplicados.sum())} filas repetidas excluidas")
 preparar(sf, OBJECT_NAME, df_envio)

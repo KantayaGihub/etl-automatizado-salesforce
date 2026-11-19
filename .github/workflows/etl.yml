@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
   push:
-    branches: [Fixing-etl-rc]
+    branches: [Fixing-etl-rc, main]
     paths:
       - .github/workflows/etl.yml
       - etl/**
@@ -24,6 +24,8 @@ concurrency:
 
 jobs:
   etl:
+    # En main, solo probar por push cuando el commit lo solicita explícitamente.
+    if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' || contains(github.event.head_commit.message, '[probar-etl]') }}
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
